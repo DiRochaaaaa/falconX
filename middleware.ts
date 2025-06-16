@@ -1,11 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import type { AuthSession } from '@supabase/supabase-js'
-
-// Cache para otimização (em produção seria Redis/Memcached)
-const sessionCache = new Map<string, { session: AuthSession | null; timestamp: number }>()
-const CACHE_DURATION = 10000 // 10 segundos
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({
@@ -83,69 +78,21 @@ export async function middleware(req: NextRequest) {
   let session = null
   
   try {
-    // Gerar chave de cache baseada nos cookies de sessão
-    const sessionCookies = [
-      req.cookies.get('sb-access-token')?.value,
-      req.cookies.get('sb-refresh-token')?.value,
-    ].filter(Boolean).join('|')
-    
-    const cacheKey = `session:${sessionCookies}`
-    const cached = sessionCache.get(cacheKey)
-    
-    // Verificar cache primeiro
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      session = cached.session
-    } else {
-      // Timeout mais agressivo para middleware
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Middleware timeout')), 2000)
-      )
-      
-      const sessionPromise = supabase.auth.getSession()
-      
-      try {
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as { data: { session: AuthSession | null } }
-        session = result?.data?.session
-        
-        // Atualizar cache
-        sessionCache.set(cacheKey, { session, timestamp: Date.now() })
-        
-        // Limpar cache antigo (manter apenas 100 entradas)
-        if (sessionCache.size > 100) {
-          const oldestKey = sessionCache.keys().next().value
-          if (oldestKey) {
-            sessionCache.delete(oldestKey)
-          }
-        }
-      } catch (timeoutError) {
-        // Em caso de timeout, verificar se temos cache antigo
-        if (cached) {
-          session = cached.session
-        }
-      }
-    }
+    const { data: { session: currentSession } } = await supabase.auth.getSession()
+    session = currentSession
   } catch (error) {
     console.error('Erro no middleware:', error)
-    // Em caso de erro crítico, permitir acesso e deixar o cliente decidir
+    // Em caso de erro, permitir acesso e deixar o cliente decidir
     return res
   }
 
-  // Lógica de redirecionamento otimizada
+  // Lógica de redirecionamento
   if (isProtectedRoute && !session) {
-    // Adicionar header para indicar redirect por falta de auth
-    res.headers.set('X-Auth-Required', 'true')
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   if (isAuthRoute && session) {
-    // Adicionar header para indicar redirect por já estar autenticado
-    res.headers.set('X-Already-Authenticated', 'true')
     return NextResponse.redirect(new URL('/dashboard', req.url))
-  }
-
-  // Adicionar headers úteis para o cliente
-  if (session) {
-    res.headers.set('X-User-Authenticated', 'true')
   }
 
   return res

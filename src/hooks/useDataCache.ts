@@ -1,24 +1,20 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface CacheItem<T> {
   data: T
   timestamp: number
-  loading: boolean
 }
 
 interface CacheConfig {
   duration: number // em milissegundos
-  retryAttempts: number
-  retryDelay: number
+  enabled?: boolean // se deve executar a query
 }
 
 const defaultConfig: CacheConfig = {
   duration: 30000, // 30 segundos
-  retryAttempts: 2,
-  retryDelay: 1000
 }
 
 // Cache global para dados
@@ -33,41 +29,19 @@ export function useDataCache<T>(
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const configRef = useRef({ ...defaultConfig, ...config })
+  const finalConfig = { ...defaultConfig, ...config }
 
   const isCacheValid = useCallback((cacheItem: CacheItem<T>) => {
-    return Date.now() - cacheItem.timestamp < configRef.current.duration
-  }, [configRef])
-
-  const executeQuery = useCallback(async (attempt = 0): Promise<T> => {
-    try {
-      // Timeout para evitar queries infinitas
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutRef.current = setTimeout(() => {
-          reject(new Error('Query timeout'))
-        }, 5000)
-      })
-
-      const queryPromise = queryFn()
-      const result = await Promise.race([queryPromise, timeoutPromise])
-      
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-
-      return result
-    } catch (error) {
-      if (attempt < configRef.current.retryAttempts) {
-        console.log(`Query failed, retrying... (${attempt + 1}/${configRef.current.retryAttempts})`)
-        await new Promise(resolve => setTimeout(resolve, configRef.current.retryDelay))
-        return executeQuery(attempt + 1)
-      }
-      throw error
-    }
-  }, [queryFn])
+    return Date.now() - cacheItem.timestamp < finalConfig.duration
+  }, [finalConfig.duration])
 
   const fetchData = useCallback(async (forceRefresh = false) => {
+    // Se disabled, não executar
+    if (finalConfig.enabled === false) {
+      setLoading(false)
+      return
+    }
+
     setError(null)
     
     // Verificar cache primeiro
@@ -86,13 +60,12 @@ export function useDataCache<T>(
     setLoading(true)
 
     try {
-      const result = await executeQuery()
+      const result = await queryFn()
       
       // Atualizar cache
       dataCache.set(key, {
         data: result,
-        timestamp: Date.now(),
-        loading: false
+        timestamp: Date.now()
       })
 
       setData(result)
@@ -111,7 +84,7 @@ export function useDataCache<T>(
     } finally {
       setLoading(false)
     }
-  }, [key, executeQuery, isCacheValid])
+  }, [key, queryFn, isCacheValid, finalConfig.enabled])
 
   const refresh = useCallback(() => {
     return fetchData(true)
@@ -123,11 +96,6 @@ export function useDataCache<T>(
 
   useEffect(() => {
     fetchData()
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
   }, [fetchData])
 
   return {
@@ -136,16 +104,20 @@ export function useDataCache<T>(
     error,
     refresh,
     invalidate,
-    isStale: data ? !isCacheValid(dataCache.get(key) || { data: data, timestamp: 0, loading: false }) : false
+    isStale: data ? !isCacheValid(dataCache.get(key) || { data: data, timestamp: 0 }) : false
   }
 }
 
 // Hooks específicos para dados do dashboard
 export function useDashboardStats(userId: string) {
+  const shouldFetch = !!userId && userId.trim() !== ''
+  
   return useDataCache(
-    `dashboard-stats-${userId}`,
+    `dashboard-stats-${userId || 'no-user'}`,
     async () => {
-      if (!userId) throw new Error('User ID required')
+      if (!userId || userId.trim() === '') {
+        throw new Error('User ID required')
+      }
 
       const [
         { count: allowedDomainsCount },
@@ -184,15 +156,22 @@ export function useDashboardStats(userId: string) {
         activeActions: activeActionsCount || 0
       }
     },
-    { duration: 20000 } // 20 segundos para estatísticas
+    { 
+      duration: 20000, // 20 segundos para estatísticas
+      enabled: shouldFetch // Só executa se tiver userId
+    }
   )
 }
 
 export function useRecentDetections(userId: string) {
+  const shouldFetch = !!userId && userId.trim() !== ''
+  
   return useDataCache(
-    `recent-detections-${userId}`,
+    `recent-detections-${userId || 'no-user'}`,
     async () => {
-      if (!userId) throw new Error('User ID required')
+      if (!userId || userId.trim() === '') {
+        throw new Error('User ID required')
+      }
 
       const { data } = await supabase
         .from('detected_clones')
@@ -210,15 +189,22 @@ export function useRecentDetections(userId: string) {
         ip_address: detection.ip_address || 'N/A'
       }))
     },
-    { duration: 15000 } // 15 segundos para detecções recentes
+    { 
+      duration: 15000, // 15 segundos para detecções recentes
+      enabled: shouldFetch
+    }
   )
 }
 
 export function useAllowedDomains(userId: string) {
+  const shouldFetch = !!userId && userId.trim() !== ''
+  
   return useDataCache(
-    `allowed-domains-${userId}`,
+    `allowed-domains-${userId || 'no-user'}`,
     async () => {
-      if (!userId) throw new Error('User ID required')
+      if (!userId || userId.trim() === '') {
+        throw new Error('User ID required')
+      }
 
       const { data, error } = await supabase
         .from('allowed_domains')
@@ -229,6 +215,9 @@ export function useAllowedDomains(userId: string) {
       if (error) throw error
       return data || []
     },
-    { duration: 25000 } // 25 segundos para domínios permitidos
+    { 
+      duration: 25000, // 25 segundos para domínios permitidos
+      enabled: shouldFetch
+    }
   )
 } 

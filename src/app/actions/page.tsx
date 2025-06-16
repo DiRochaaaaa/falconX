@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useState, useCallback } from 'react'
-import Navigation from '@/components/Navigation'
+import DashboardLayout from '@/components/DashboardLayout'
 import { Icons } from '@/components/Icons'
 
 interface ActionConfig {
@@ -191,9 +191,7 @@ export default function Actions() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-main">
-      <Navigation />
-      
+    <DashboardLayout>
       {/* Header */}
       <div className="glass border-b border-green-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -637,6 +635,6 @@ export default function Actions() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   )
 } 
