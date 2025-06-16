@@ -216,10 +216,9 @@ export default function Scripts() {
               <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                 <h3 className="text-blue-300 font-medium mb-2">Como usar:</h3>
                 <ol className="text-blue-200 text-sm space-y-1">
-                  <li>1. Substitua &apos;YOUR_API_KEY&apos; pela sua chave API</li>
-                  <li>2. Cole o script no &lt;head&gt; do seu site</li>
-                  <li>3. Configure os domínios permitidos na seção Domínios</li>
-                  <li>4. Monitore as detecções no Dashboard</li>
+                  <li>1. Cole o script no &lt;head&gt; do seu site</li>
+                  <li>2. Configure os domínios permitidos na seção Domínios</li>
+                  <li>3. Monitore as detecções no Dashboard</li>
                 </ol>
               </div>
             </div>
