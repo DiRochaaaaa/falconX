@@ -61,7 +61,8 @@ export default function Register() {
           router.push('/dashboard')
         }, 2000)
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Erro no registro:', err)
       setError('Erro inesperado. Tente novamente.')
     } finally {
       setLoading(false)

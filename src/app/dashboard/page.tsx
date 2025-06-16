@@ -1,10 +1,10 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
+import Link from 'next/link'
 
 interface DashboardStats {
   allowedDomains: number
@@ -13,72 +13,71 @@ interface DashboardStats {
   activeActions: number
 }
 
+interface Detection {
+  id: string
+  domain: string
+  detected_at: string
+  action_taken: string
+  user_agent: string
+  ip_address: string
+}
+
 export default function Dashboard() {
   const { user, profile, loading } = useAuth()
-  const [stats, setStats] = useState<DashboardStats>({
-    allowedDomains: 0,
-    detectedClones: 0,
-    totalDetections: 0,
-    activeActions: 0
-  })
+  const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(true)
+  const [recentDetections, setRecentDetections] = useState<Detection[]>([])
+  const [error, setError] = useState('')
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     if (!user?.id) {
       setLoadingStats(false)
       return
     }
 
     try {
-      // Carregar estatísticas do usuário
-      const [domainsResult, clonesResult, actionsResult] = await Promise.all([
-        supabase
-          .from('allowed_domains')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('is_active', true),
-        
-        supabase
-          .from('detected_clones')
-          .select('id, detection_count')
-          .eq('user_id', user.id),
-        
-        supabase
-          .from('clone_actions')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-      ])
+      // Por enquanto, vamos simular os dados até implementarmos as tabelas reais
+      const mockStats: DashboardStats = {
+        allowedDomains: 3,
+        detectedClones: 2,
+        totalDetections: 15,
+        activeActions: 3
+      }
 
-      const totalDetections = clonesResult.data?.reduce((sum, clone) => sum + (clone.detection_count || 0), 0) || 0
+      const mockDetections: Detection[] = [
+        {
+          id: '1',
+          domain: 'clone1.com',
+          detected_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          action_taken: 'redirect',
+          user_agent: 'Mozilla/5.0...',
+          ip_address: '192.168.1.1'
+        },
+        {
+          id: '2', 
+          domain: 'fake-site.net',
+          detected_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          action_taken: 'blank_page',
+          user_agent: 'Mozilla/5.0...',
+          ip_address: '10.0.0.1'
+        }
+      ]
 
-      setStats({
-        allowedDomains: domainsResult.data?.length || 0,
-        detectedClones: clonesResult.data?.length || 0,
-        totalDetections,
-        activeActions: actionsResult.data?.length || 0
-      })
+      setStats(mockStats)
+      setRecentDetections(mockDetections)
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
-      // Definir valores padrão em caso de erro
-      setStats({
-        allowedDomains: 0,
-        detectedClones: 0,
-        totalDetections: 0,
-        activeActions: 0
-      })
+      setError('Erro ao carregar dados do dashboard')
     } finally {
       setLoadingStats(false)
     }
-  }
+  }, [user?.id])
 
   useEffect(() => {
     if (user?.id) {
       loadDashboardStats()
-    } else if (!loading) {
-      setLoadingStats(false)
     }
-  }, [user?.id, loading])
+  }, [user?.id, loadDashboardStats])
 
   if (loading) {
     return (
@@ -133,7 +132,7 @@ export default function Dashboard() {
               <div className="ml-4">
                 <p className="text-sm text-gray-400">Domínios Monitorados</p>
                 <p className="text-2xl font-bold text-white">
-                  {loadingStats ? '...' : stats.allowedDomains}
+                  {loadingStats ? '...' : stats?.allowedDomains}
                   {planLimits.domains > 0 && (
                     <span className="text-sm text-green-400">/{planLimits.domains}</span>
                   )}
@@ -150,7 +149,7 @@ export default function Dashboard() {
               <div className="ml-4">
                 <p className="text-sm text-gray-400">Clones Detectados</p>
                 <p className="text-2xl font-bold text-white">
-                  {loadingStats ? '...' : stats.detectedClones}
+                  {loadingStats ? '...' : stats?.detectedClones}
                 </p>
               </div>
             </div>
@@ -164,7 +163,7 @@ export default function Dashboard() {
               <div className="ml-4">
                 <p className="text-sm text-gray-400">Total de Detecções</p>
                 <p className="text-2xl font-bold text-white">
-                  {loadingStats ? '...' : stats.totalDetections}
+                  {loadingStats ? '...' : stats?.totalDetections}
                 </p>
               </div>
             </div>
@@ -178,7 +177,7 @@ export default function Dashboard() {
               <div className="ml-4">
                 <p className="text-sm text-gray-400">Ações Ativas</p>
                 <p className="text-2xl font-bold text-white">
-                  {loadingStats ? '...' : stats.activeActions}
+                  {loadingStats ? '...' : stats?.activeActions}
                 </p>
               </div>
             </div>
@@ -200,15 +199,15 @@ export default function Dashboard() {
                 <Icons.ChevronDown className="h-5 w-5 text-green-400 group-hover:text-green-300 transition-colors rotate-[-90deg]" />
               </button>
               
-              <button className="w-full flex items-center justify-between p-4 glass-strong rounded-lg hover:border-green-400/60 transition-all duration-300 group">
+              <a href="/scripts" className="w-full flex items-center justify-between p-4 glass-strong rounded-lg hover:border-green-400/60 transition-all duration-300 group">
                 <div className="flex items-center">
                   <div className="p-2 bg-gradient-green-light rounded-lg mr-3">
                     <Icons.Code className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-white font-medium">Gerar Script</span>
+                  <span className="text-white font-medium">Gerar Script Global</span>
                 </div>
                 <Icons.ChevronDown className="h-5 w-5 text-green-400 group-hover:text-green-300 transition-colors rotate-[-90deg]" />
-              </button>
+              </a>
               
               <button className="w-full flex items-center justify-between p-4 glass-strong rounded-lg hover:border-green-400/60 transition-all duration-300 group">
                 <div className="flex items-center">
@@ -240,7 +239,7 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Domínios:</span>
                 <span className="text-white font-semibold">
-                  {planLimits.domains === -1 ? 'Ilimitados' : `${stats.allowedDomains}/${planLimits.domains}`}
+                  {planLimits.domains === -1 ? 'Ilimitados' : `${stats?.allowedDomains}/${planLimits.domains}`}
                 </span>
               </div>
 
@@ -266,7 +265,7 @@ export default function Dashboard() {
         <div className="card animate-fade-in" style={{animationDelay: '0.4s'}}>
           <h3 className="text-xl font-semibold text-white mb-6">Atividade Recente</h3>
           <div className="space-y-3">
-            {stats.detectedClones === 0 ? (
+            {stats?.detectedClones === 0 ? (
               <div className="text-center py-12">
                 <div className="p-4 bg-gradient-green rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <Icons.Check className="h-8 w-8 text-white" />

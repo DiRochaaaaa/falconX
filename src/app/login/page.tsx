@@ -28,7 +28,8 @@ export default function Login() {
       } else {
         router.push('/dashboard')
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Erro no login:', err)
       setError('Erro inesperado. Tente novamente.')
     } finally {
       setLoading(false)

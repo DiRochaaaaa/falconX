@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
@@ -21,11 +21,10 @@ export default function Domains() {
   const [domains, setDomains] = useState<Domain[]>([])
   const [loadingDomains, setLoadingDomains] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showInstructionsModal, setShowInstructionsModal] = useState(false)
-  const [selectedDomain, setSelectedDomain] = useState<string>('')
   const [newDomain, setNewDomain] = useState('')
   const [addingDomain, setAddingDomain] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const getPlanLimits = () => {
     switch (profile?.plan_type) {
@@ -38,7 +37,7 @@ export default function Domains() {
 
   const planLimits = getPlanLimits()
 
-  const loadDomains = async () => {
+  const loadDomains = useCallback(async () => {
     if (!user?.id) {
       setLoadingDomains(false)
       return
@@ -82,7 +81,7 @@ export default function Domains() {
     } finally {
       setLoadingDomains(false)
     }
-  }
+  }, [user?.id])
 
   const validateDomain = (domain: string) => {
     const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/
@@ -173,46 +172,11 @@ export default function Domains() {
     }
   }
 
-  const generateScript = (domain: string) => {
-    const script = `<!-- Falcon X Protection Script -->
-<script>
-(function() {
-  const domain = '${domain}';
-  const apiKey = '${user?.id?.slice(0, 8)}';
-  
-  // Script obfuscado de proteção
-  const checkDomain = () => {
-    if (window.location.hostname !== domain) {
-      fetch('https://api.falconx.com/detect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          original: domain,
-          clone: window.location.hostname,
-          apiKey: apiKey
-        })
-      });
-    }
-  };
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkDomain);
-  } else {
-    checkDomain();
-  }
-})();
-</script>`
-
-    navigator.clipboard.writeText(script)
-    setSelectedDomain(domain)
-    setShowInstructionsModal(true)
-  }
-
   useEffect(() => {
     if (user?.id) {
       loadDomains()
     }
-  }, [user?.id])
+  }, [user?.id, loadDomains])
 
   if (loading) {
     return (
@@ -346,15 +310,6 @@ export default function Domains() {
                   
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => generateScript(domain.domain)}
-                      className="btn-secondary text-sm px-3 py-2"
-                      title="Copiar script de proteção"
-                    >
-                      <Icons.Copy className="h-4 w-4 mr-1" />
-                      Script
-                    </button>
-                    
-                    <button
                       onClick={() => toggleDomainStatus(domain.id, domain.is_active)}
                       className={`text-sm px-3 py-2 rounded-lg transition-colors ${
                         domain.is_active 
@@ -446,123 +401,7 @@ export default function Domains() {
         </div>
       )}
 
-      {/* Instructions Modal */}
-      {showInstructionsModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-modal p-4">
-          <div className="card max-w-2xl w-full animate-fade-in max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">Script de Proteção - {selectedDomain}</h2>
-              <button
-                onClick={() => {
-                  setShowInstructionsModal(false)
-                  setSelectedDomain('')
-                }}
-                className="text-gray-400 hover:text-white"
-              >
-                <Icons.X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="flex items-center mb-2">
-                  <Icons.Check className="h-5 w-5 text-green-400 mr-2" />
-                  <span className="text-green-400 font-medium">Script copiado com sucesso!</span>
-                </div>
-                <p className="text-green-300 text-sm">
-                  O script foi copiado para sua área de transferência. Siga as instruções abaixo para implementá-lo.
-                </p>
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-3">📋 Como implementar:</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <div className="bg-gradient-green rounded-full w-6 h-6 flex items-center justify-center text-white text-sm font-bold mr-3 mt-0.5">1</div>
-                    <div>
-                      <p className="text-white font-medium">Cole o script no seu funil</p>
-                      <p className="text-gray-400 text-sm">Adicione o script no <code className="bg-gray-800 px-1 rounded">&lt;head&gt;</code> ou antes do <code className="bg-gray-800 px-1 rounded">&lt;/body&gt;</code> de todas as páginas do seu funil.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <div className="bg-gradient-green rounded-full w-6 h-6 flex items-center justify-center text-white text-sm font-bold mr-3 mt-0.5">2</div>
-                    <div>
-                      <p className="text-white font-medium">Teste a implementação</p>
-                      <p className="text-gray-400 text-sm">Acesse seu funil normalmente. O script não afetará visitantes do domínio original.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <div className="bg-gradient-green rounded-full w-6 h-6 flex items-center justify-center text-white text-sm font-bold mr-3 mt-0.5">3</div>
-                    <div>
-                      <p className="text-white font-medium">Monitore detecções</p>
-                      <p className="text-gray-400 text-sm">Volte ao dashboard para ver clones detectados em tempo real.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-yellow-400 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <div>
-                    <p className="text-yellow-400 font-medium mb-1">⚠️ Importante:</p>
-                    <ul className="text-yellow-300 text-sm space-y-1">
-                      <li>• O script é invisível e não afeta a performance</li>
-                      <li>• Funciona apenas quando o funil é acessado de domínios não autorizados</li>
-                      <li>• Mantenha o script sempre atualizado</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-3">🔧 Plataformas suportadas:</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                    <div className="text-green-400 font-medium">WordPress</div>
-                    <div className="text-gray-400 text-xs">Tema ou plugin</div>
-                  </div>
-                  <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                    <div className="text-green-400 font-medium">ClickFunnels</div>
-                    <div className="text-gray-400 text-xs">Tracking code</div>
-                  </div>
-                  <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                    <div className="text-green-400 font-medium">Leadpages</div>
-                    <div className="text-gray-400 text-xs">HTML personalizado</div>
-                  </div>
-                  <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                    <div className="text-green-400 font-medium">HTML/CSS</div>
-                    <div className="text-gray-400 text-xs">Código direto</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => generateScript(selectedDomain)}
-                  className="btn-secondary flex-1 flex items-center justify-center"
-                >
-                  <Icons.Copy className="h-4 w-4 mr-2" />
-                  Copiar Novamente
-                </button>
-                <button
-                  onClick={() => {
-                    setShowInstructionsModal(false)
-                    setSelectedDomain('')
-                  }}
-                  className="btn-primary flex-1"
-                >
-                  Entendi
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 } 
