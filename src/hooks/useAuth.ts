@@ -10,7 +10,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -19,22 +19,28 @@ export function useAuth() {
         .single()
 
       if (error && error.code === 'PGRST116') {
-        // Perfil não existe, aguardar trigger criar automaticamente
-        console.log('Perfil não encontrado, aguardando criação automática...')
-        // Tentar novamente após um delay
-        setTimeout(() => loadProfile(userId), 1000)
-        return
-      }
-
-      if (error) {
+        // Perfil não existe, tentar criar ou aguardar trigger
+        if (retryCount < 3) {
+          console.log(`Perfil não encontrado, tentativa ${retryCount + 1}/3...`)
+          setTimeout(() => loadProfile(userId, retryCount + 1), 1000)
+          return
+        } else {
+          console.log('Perfil não encontrado após 3 tentativas, continuando sem perfil')
+          setProfile(null)
+        }
+      } else if (error) {
         console.error('Erro ao carregar perfil:', error)
+        setProfile(null)
       } else {
         setProfile(data)
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
+      setProfile(null)
     } finally {
-      setLoading(false)
+      if (retryCount === 0 || retryCount >= 3) {
+        setLoading(false)
+      }
     }
   }, [])
 

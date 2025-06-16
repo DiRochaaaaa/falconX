@@ -1,143 +1,186 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { useAuth } from '../../hooks/useAuth'
 
-export default function LoginPage() {
+export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
-  const { signIn, user, mounted } = useAuth()
   const router = useRouter()
 
-  // Redirecionar se já estiver logado
-  useEffect(() => {
-    if (mounted && user) {
-      router.replace('/dashboard')
-    }
-  }, [user, router, mounted])
-
-  // Não renderizar até montar para evitar problemas de hidratação
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-      </div>
-    )
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const { error } = await signIn(email, password)
-    
-    if (error) {
-      setError(error.message)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      setError('Erro inesperado. Tente novamente.')
+    } finally {
       setLoading(false)
     }
-    // Se não houver erro, o useAuth vai redirecionar automaticamente
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Falcon X</h1>
-          <p className="text-slate-400">Proteja seus funis contra clones</p>
+    <div className="min-h-screen bg-gradient-main flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <div className="text-center animate-fade-in">
+          <h1 className="text-4xl font-bold text-gradient mb-2">Falcon X</h1>
+          <h2 className="text-2xl font-semibold text-white mb-2">Entrar na sua conta</h2>
+          <p className="text-gray-400">Proteja seus funnels de vendas contra clones</p>
         </div>
 
-        {/* Formulário */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-          <h2 className="text-2xl font-semibold text-white mb-6 text-center">Fazer Login</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
+        {/* Form */}
+        <div className="card animate-fade-in" style={{animationDelay: '0.2s'}}>
+          <form className="space-y-6" onSubmit={handleLogin}>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 animate-fade-in">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-red-300 text-sm">{error}</span>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                required
+                className="input-primary"
+                placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="seu@email.com"
               />
             </div>
 
-            {/* Senha */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Senha
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
+                required
+                className="input-primary"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="••••••••"
               />
             </div>
 
-            {/* Erro */}
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
-                <p className="text-red-200 text-sm">{error}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-600 bg-gray-800 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+                  Lembrar de mim
+                </label>
               </div>
-            )}
 
-            {/* Botão */}
+              <div className="text-sm">
+                <a href="#" className="text-green-400 hover:text-green-300 transition-colors">
+                  Esqueceu a senha?
+                </a>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+              className="btn-primary w-full flex items-center justify-center"
             >
               {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <>
+                  <div className="loading-spinner h-4 w-4 mr-2"></div>
                   Entrando...
-                </div>
+                </>
               ) : (
-                'Entrar'
+                <>
+                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7c2 0 3 1 3 3v1" />
+                  </svg>
+                  Entrar
+                </>
               )}
             </button>
           </form>
 
-          {/* Links */}
-          <div className="mt-6 text-center space-y-2">
-            <p className="text-slate-400">
-              Não tem uma conta?{' '}
-              <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium">
-                Cadastre-se
-              </Link>
-            </p>
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-900 text-gray-400">Ou</span>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400">
+                Não tem uma conta?{' '}
+                <Link href="/register" className="text-green-400 hover:text-green-300 font-medium transition-colors">
+                  Cadastre-se grátis
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
-            © 2024 Falcon X. Todos os direitos reservados.
-          </p>
+        {/* Features */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 animate-fade-in" style={{animationDelay: '0.4s'}}>
+          <div className="text-center">
+            <div className="bg-gradient-green rounded-full p-3 w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.065-5.065a7.5 7.5 0 11-10.606 10.606 7.5 7.5 0 0110.606-10.606z" />
+              </svg>
+            </div>
+            <p className="text-xs text-gray-400">Detecção em tempo real</p>
+          </div>
+          <div className="text-center">
+            <div className="bg-gradient-green-light rounded-full p-3 w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <p className="text-xs text-gray-400">Proteção avançada</p>
+          </div>
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-green-400 to-green-500 rounded-full p-3 w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <p className="text-xs text-gray-400">Ações automáticas</p>
+          </div>
         </div>
       </div>
     </div>

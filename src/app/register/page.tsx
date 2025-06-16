@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { useAuth } from '../../hooks/useAuth'
 
-export default function RegisterPage() {
+export default function Register() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -15,25 +15,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  
-  const { signUp, user, mounted } = useAuth()
   const router = useRouter()
-
-  // Redirecionar se já estiver logado
-  useEffect(() => {
-    if (mounted && user) {
-      router.replace('/dashboard')
-    }
-  }, [user, router, mounted])
-
-  // Não renderizar até montar para evitar problemas de hidratação
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-      </div>
-    )
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -42,55 +24,65 @@ export default function RegisterPage() {
     })
   }
 
-  const validateForm = () => {
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    // Validações
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem')
-      return false
+      setLoading(false)
+      return
     }
+
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres')
-      return false
+      setLoading(false)
+      return
     }
-    return true
-  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
-    if (!validateForm()) return
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          }
+        }
+      })
 
-    setLoading(true)
-
-    // Para desenvolvimento: sempre mostrar sucesso
-    await signUp(formData.email, formData.password, formData.fullName)
-    
-    // Sempre tratar como sucesso para evitar problemas de confirmação de email
-    console.log('Cadastro realizado!')
-    setSuccess(true)
-    setLoading(false)
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 2000)
+      }
+    } catch (error) {
+      setError('Erro inesperado. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-xl mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-gradient-main flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="card text-center animate-fade-in">
+            <div className="bg-gradient-green rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-white mb-4">Conta Criada!</h2>
-            <p className="text-slate-300 mb-6">
-              Sua conta foi criada com sucesso! Você pode fazer login agora mesmo.
+            <h2 className="text-2xl font-bold text-white mb-2">Conta criada com sucesso!</h2>
+            <p className="text-gray-400 mb-4">
+              Bem-vindo ao Falcon X! Redirecionando para o dashboard...
             </p>
-            <Link 
-              href="/login"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Ir para Login
-            </Link>
+            <div className="loading-spinner h-6 w-6 mx-auto"></div>
           </div>
         </div>
       </div>
@@ -98,135 +90,202 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Falcon X</h1>
-          <p className="text-slate-400">Proteja seus funis contra clones</p>
+    <div className="min-h-screen bg-gradient-main flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <div className="text-center animate-fade-in">
+          <h1 className="text-4xl font-bold text-gradient mb-2">Falcon X</h1>
+          <h2 className="text-2xl font-semibold text-white mb-2">Criar sua conta</h2>
+          <p className="text-gray-400">Comece a proteger seus funnels gratuitamente</p>
         </div>
 
-        {/* Formulário */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-          <h2 className="text-2xl font-semibold text-white mb-6 text-center">Criar Conta</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Nome */}
+        {/* Form */}
+        <div className="card animate-fade-in" style={{animationDelay: '0.2s'}}>
+          <form className="space-y-6" onSubmit={handleRegister}>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 animate-fade-in">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-red-300 text-sm">{error}</span>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-2">
                 Nome Completo
               </label>
               <input
                 id="fullName"
                 name="fullName"
                 type="text"
+                autoComplete="name"
+                required
+                className="input-primary"
+                placeholder="Seu nome completo"
                 value={formData.fullName}
                 onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="Seu nome completo"
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
+                required
+                className="input-primary"
+                placeholder="seu@email.com"
                 value={formData.email}
                 onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="seu@email.com"
               />
             </div>
 
-            {/* Senha */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Senha
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="new-password"
+                required
+                className="input-primary"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="••••••••"
               />
+              <p className="text-xs text-gray-500 mt-1">Mínimo de 6 caracteres</p>
             </div>
 
-            {/* Confirmar Senha */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
                 Confirmar Senha
               </label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
+                autoComplete="new-password"
+                required
+                className="input-primary"
+                placeholder="••••••••"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
-                placeholder="••••••••"
               />
             </div>
 
-            {/* Erro */}
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
-                <p className="text-red-200 text-sm">{error}</p>
-              </div>
-            )}
+            <div className="flex items-center">
+              <input
+                id="terms"
+                name="terms"
+                type="checkbox"
+                required
+                className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-600 bg-gray-800 rounded"
+              />
+              <label htmlFor="terms" className="ml-2 block text-sm text-gray-400">
+                Aceito os{' '}
+                <a href="#" className="text-green-400 hover:text-green-300 transition-colors">
+                  Termos de Uso
+                </a>{' '}
+                e{' '}
+                <a href="#" className="text-green-400 hover:text-green-300 transition-colors">
+                  Política de Privacidade
+                </a>
+              </label>
+            </div>
 
-            {/* Botão */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+              className="btn-primary w-full flex items-center justify-center"
             >
               {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <>
+                  <div className="loading-spinner h-4 w-4 mr-2"></div>
                   Criando conta...
-                </div>
+                </>
               ) : (
-                'Criar Conta'
+                <>
+                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Criar Conta Grátis
+                </>
               )}
             </button>
           </form>
 
-          {/* Links */}
-          <div className="mt-6 text-center space-y-2">
-            <p className="text-slate-400">
-              Já tem uma conta?{' '}
-              <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
-                Fazer login
-              </Link>
-            </p>
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-900 text-gray-400">Ou</span>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400">
+                Já tem uma conta?{' '}
+                <Link href="/login" className="text-green-400 hover:text-green-300 font-medium transition-colors">
+                  Fazer login
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
-            © 2024 Falcon X. Todos os direitos reservados.
-          </p>
+        {/* Plan Features */}
+        <div className="card animate-fade-in" style={{animationDelay: '0.4s'}}>
+          <h3 className="text-lg font-semibold text-white mb-4 text-center">Plano Gratuito Inclui:</h3>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <div className="bg-gradient-green rounded-full p-1 mr-3">
+                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-gray-300 text-sm">1 domínio monitorado</span>
+            </div>
+            <div className="flex items-center">
+              <div className="bg-gradient-green rounded-full p-1 mr-3">
+                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-gray-300 text-sm">Detecção básica de clones</span>
+            </div>
+            <div className="flex items-center">
+              <div className="bg-gradient-green rounded-full p-1 mr-3">
+                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-gray-300 text-sm">Dashboard com estatísticas</span>
+            </div>
+            <div className="flex items-center">
+              <div className="bg-gradient-green rounded-full p-1 mr-3">
+                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-gray-300 text-sm">Suporte por email</span>
+            </div>
+          </div>
+          <div className="mt-4 p-3 glass-strong rounded-lg border border-green-500/30">
+            <p className="text-xs text-green-400 text-center">
+              ✨ Upgrade a qualquer momento para mais recursos
+            </p>
+          </div>
         </div>
       </div>
     </div>
