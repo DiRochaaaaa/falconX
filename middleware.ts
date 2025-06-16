@@ -60,39 +60,28 @@ export async function middleware(req: NextRequest) {
   )
 
   // Definir rotas
-  const protectedRoutes = ['/dashboard', '/domains', '/scripts', '/actions']
   const authRoutes = ['/login', '/register']
   const publicRoutes = ['/', '/about', '/contact']
   
-  const isProtectedRoute = protectedRoutes.some(route => 
-    req.nextUrl.pathname.startsWith(route)
-  )
   const isAuthRoute = authRoutes.includes(req.nextUrl.pathname)
   const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname)
 
-  // Permitir acesso direto a rotas públicas
+  // Permitir acesso direto a rotas públicas e de teste
   if (isPublicRoute) {
     return res
   }
 
-  let session = null
-  
-  try {
-    const { data: { session: currentSession } } = await supabase.auth.getSession()
-    session = currentSession
-  } catch (error) {
-    console.error('Erro no middleware:', error)
-    // Em caso de erro, permitir acesso e deixar o cliente decidir
-    return res
-  }
-
-  // Lógica de redirecionamento
-  if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
-
-  if (isAuthRoute && session) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  // Só verificar sessão para rotas de auth (para evitar redirecionamento duplo)
+  if (isAuthRoute) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+    } catch (error) {
+      console.error('Erro no middleware:', error)
+    }
   }
 
   return res

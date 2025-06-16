@@ -10,7 +10,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string, userEmail?: string, userFullName?: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -22,8 +22,8 @@ export function useAuth() {
         // Profile não existe - criar profile básico
         const basicProfile: UserProfile = {
           id: userId,
-          email: user?.email || '',
-          full_name: user?.user_metadata?.full_name || 'Usuário',
+          email: userEmail || '',
+          full_name: userFullName || 'Usuário',
           plan_type: 'free',
           api_key: '',
           created_at: new Date().toISOString(),
@@ -44,7 +44,7 @@ export function useAuth() {
       setProfile(null)
       return null
     }
-  }, [user?.email, user?.user_metadata?.full_name])
+  }, [])
 
   const checkAuth = useCallback(async () => {
     try {
@@ -62,7 +62,7 @@ export function useAuth() {
       setIsAuthenticated(!!session?.user)
       
       if (session?.user) {
-        await loadProfile(session.user.id)
+        await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
       } else {
         setProfile(null)
       }
@@ -83,15 +83,13 @@ export function useAuth() {
     // Listener para mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event)
-        
         // Não mostrar loading para mudanças de estado que não são login/logout
         if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') {
           setUser(session?.user ?? null)
           setIsAuthenticated(!!session?.user)
           
           if (session?.user) {
-            await loadProfile(session.user.id)
+            await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
           } else {
             setProfile(null)
           }
@@ -102,7 +100,7 @@ export function useAuth() {
         setIsAuthenticated(!!session?.user)
         
         if (session?.user) {
-          await loadProfile(session.user.id)
+          await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
         } else {
           setProfile(null)
         }
