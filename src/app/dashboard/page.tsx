@@ -156,6 +156,22 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-lg p-4 animate-fade-in">
+            <div className="flex items-center">
+              <Icons.Warning className="h-5 w-5 text-red-400 mr-2" />
+              <span className="text-red-300 text-sm">{error}</span>
+              <button
+                onClick={() => setError('')}
+                className="ml-auto text-red-400 hover:text-red-300"
+              >
+                <Icons.X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="card card-hover animate-fade-in">
