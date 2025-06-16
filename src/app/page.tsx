@@ -167,7 +167,7 @@ export default function Home() {
                     Dashboard
                   </li>
                 </ul>
-                <Link href="/register" className="btn-secondary w-full">
+                <Link href="/register" className="btn-secondary">
                   Começar Grátis
                 </Link>
               </div>
@@ -198,7 +198,7 @@ export default function Home() {
                     Ações básicas
                   </li>
                 </ul>
-                <Link href="/register" className="btn-primary w-full">
+                <Link href="/register" className="btn-primary">
                   Escolher Bronze
                 </Link>
               </div>
@@ -206,7 +206,7 @@ export default function Home() {
 
             {/* Silver Plan */}
             <div className="card card-hover animate-fade-in border-green-400/40" style={{animationDelay: '0.2s'}}>
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <div className="absolute whitespace-nowrap -top-3 left-1/2 transform -translate-x-1/2">
                 <span className="bg-gradient-green text-white px-3 py-1 rounded-full text-xs font-medium">
                   Mais Popular
                 </span>
@@ -234,7 +234,7 @@ export default function Home() {
                     Ações automáticas
                   </li>
                 </ul>
-                <Link href="/register" className="btn-primary w-full">
+                <Link href="/register" className="btn-primary">
                   Escolher Silver
                 </Link>
               </div>
@@ -265,7 +265,7 @@ export default function Home() {
                     Suporte prioritário
                   </li>
                 </ul>
-                <Link href="/register" className="btn-primary w-full">
+                <Link href="/register" className="btn-primary">
                   Escolher Gold
                 </Link>
               </div>

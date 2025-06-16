@@ -96,7 +96,7 @@ body {
 
 /* Botões */
 .btn-primary {
-  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 relative overflow-hidden;
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 relative overflow-hidden;
   background: var(--gradient-primary);
   color: white;
   border: 1px solid transparent;
@@ -113,7 +113,7 @@ body {
 }
 
 .btn-secondary {
-  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300;
   background: rgba(16, 185, 129, 0.1);
   color: var(--text-accent);
   border: 1px solid var(--border-primary);
