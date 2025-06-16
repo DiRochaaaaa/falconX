@@ -24,6 +24,7 @@ export default function Domains() {
   const [newDomain, setNewDomain] = useState('')
   const [addingDomain, setAddingDomain] = useState(false)
   const [error, setError] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [success, setSuccess] = useState('')
 
   const getPlanLimits = () => {

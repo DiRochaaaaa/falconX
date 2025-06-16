@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useState, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
-import Link from 'next/link'
+
 
 interface DashboardStats {
   allowedDomains: number
@@ -26,7 +26,9 @@ export default function Dashboard() {
   const { user, profile, loading } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [recentDetections, setRecentDetections] = useState<Detection[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState('')
 
   const loadDashboardStats = useCallback(async () => {

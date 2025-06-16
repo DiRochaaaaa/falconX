@@ -443,7 +443,7 @@ export default function Scripts() {
                     <div className="bg-gradient-green rounded-full w-6 h-6 flex items-center justify-center text-white text-sm font-bold mr-3 mt-0.5">1</div>
                     <div>
                       <p className="text-white font-medium">Copie o script acima</p>
-                      <p className="text-gray-400 text-sm">Use o botão "Copiar Script" para copiar automaticamente</p>
+                      <p className="text-gray-400 text-sm">Use o botão &quot;Copiar Script&quot; para copiar automaticamente</p>
                     </div>
                   </div>
                   
@@ -459,7 +459,7 @@ export default function Scripts() {
                     <div className="bg-gradient-green rounded-full w-6 h-6 flex items-center justify-center text-white text-sm font-bold mr-3 mt-0.5">3</div>
                     <div>
                       <p className="text-white font-medium">Configure as ações</p>
-                      <p className="text-gray-400 text-sm">Vá para a página "Ações" para definir o que fazer com os clones</p>
+                      <p className="text-gray-400 text-sm">Vá para a página &quot;Ações&quot; para definir o que fazer com os clones</p>
                     </div>
                   </div>
                 </div>
