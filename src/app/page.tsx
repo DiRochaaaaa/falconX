@@ -49,17 +49,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
-              Proteja seus{' '}
-              <span className="text-gradient">Funnels</span>
-              <br />
+              Proteja seus <span className="text-gradient">Funnels</span><br />
               contra Clones
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Detecte automaticamente quando alguém copia seu funil de vendas e tome ações imediatas para proteger seu negócio.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register" className="btn-primary text-lg px-8 py-4">
-                <svg className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <Link href="/register" className="btn-primary text-lg px-8 py-4 flex items-center justify-center gap-2">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Começar Grátis

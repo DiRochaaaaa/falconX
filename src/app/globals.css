@@ -258,10 +258,7 @@ body {
   .btn-ghost {
     @apply px-4 py-2 text-sm;
   }
-  
-  .text-gradient {
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-  }
+
 }
 
 /* Melhorias de acessibilidade */
