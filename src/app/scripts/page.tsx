@@ -17,7 +17,7 @@ export default function Scripts() {
       code: `<!-- FalconX Detection Script -->
 <script>
 (function() {
-  const apiKey = 'YOUR_API_KEY';
+  const apiKey = 'API_KEY';
   const originalDomain = window.location.hostname;
   
   // Verificar se é um clone
@@ -48,7 +48,7 @@ export default function Scripts() {
       code: `<!-- FalconX Protection Script -->
 <script>
 (function() {
-  const apiKey = 'YOUR_API_KEY';
+  const apiKey = 'API_KEY';
   const allowedDomains = ['seusite.com', 'www.seusite.com'];
   
   if (!allowedDomains.includes(window.location.hostname)) {
@@ -66,7 +66,7 @@ export default function Scripts() {
       code: `<!-- FalconX Analytics Script -->
 <script>
 (function() {
-  const apiKey = 'YOUR_API_KEY';
+  const apiKey = 'API_KEY';
   
   // Coletar dados do visitante
   const data = {
@@ -92,7 +92,7 @@ export default function Scripts() {
 
   const handleCopyScript = async () => {
     try {
-      await navigator.clipboard.writeText(scripts[selectedScript as keyof typeof scripts].code)
+      await navigator.clipboard.writeText(scripts[selectedScript as keyof typeof scripts].code.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY'))
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -186,7 +186,7 @@ export default function Scripts() {
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">
-                  {scripts[selectedScript as keyof typeof scripts].name}
+                  {scripts[selectedScript as keyof typeof scripts].name.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY')}
                 </h2>
                 <button
                   onClick={handleCopyScript}
@@ -208,7 +208,7 @@ export default function Scripts() {
 
               <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                 <pre className="text-sm text-gray-300 overflow-x-auto">
-                  <code>{scripts[selectedScript as keyof typeof scripts].code}</code>
+                  <code>{scripts[selectedScript as keyof typeof scripts].code.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY')}</code>
                 </pre>
               </div>
 
