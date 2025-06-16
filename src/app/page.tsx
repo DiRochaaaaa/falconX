@@ -110,7 +110,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-4">Script Invisível</h3>
               <p className="text-gray-400">
-                Código obfuscado e invisível que não afeta a performance do seu site, mas detecta tentativas de clonagem.
+                Código obfuscado e invisível que não afeta a performance do seu site, e detecta todas as tentativas de clonagem.
               </p>
             </div>
 
