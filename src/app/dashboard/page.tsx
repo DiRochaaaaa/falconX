@@ -36,6 +36,12 @@ export default function Dashboard() {
       return
     }
 
+    // Timeout de segurança para evitar loading infinito
+    const safetyTimeout = setTimeout(() => {
+      console.log('Dashboard: forçando fim do loading por timeout')
+      setLoadingStats(false)
+    }, 10000) // 10 segundos máximo
+
     try {
       // Buscar domínios permitidos
       const { count: allowedDomainsCount } = await supabase
@@ -90,6 +96,7 @@ export default function Dashboard() {
 
       setStats(stats)
       setRecentDetections(detections)
+      clearTimeout(safetyTimeout)
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
       setError('Erro ao carregar dados do dashboard')
@@ -102,6 +109,7 @@ export default function Dashboard() {
         activeActions: 0
       })
       setRecentDetections([])
+      clearTimeout(safetyTimeout)
     } finally {
       setLoadingStats(false)
     }

@@ -44,6 +44,12 @@ export default function Domains() {
       return
     }
 
+    // Timeout de segurança para evitar loading infinito
+    const safetyTimeout = setTimeout(() => {
+      console.log('Domains: forçando fim do loading por timeout')
+      setLoadingDomains(false)
+    }, 10000) // 10 segundos máximo
+
     try {
       // Primeiro, buscar os domínios permitidos
       const { data: domainsData, error: domainsError } = await supabase
@@ -76,9 +82,11 @@ export default function Domains() {
       )
 
       setDomains(domainsWithStats)
+      clearTimeout(safetyTimeout)
     } catch (error) {
       console.error('Erro ao carregar domínios:', error)
       setError('Erro ao carregar domínios')
+      clearTimeout(safetyTimeout)
     } finally {
       setLoadingDomains(false)
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, AuthSession } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '../lib/supabase'
 
 export function useAuth() {
@@ -12,20 +12,28 @@ export function useAuth() {
 
   const loadProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
-      const { data, error } = await supabase
+      // Timeout para evitar requests infinitos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as { data: UserProfile | null; error: any }
+
       if (error && error.code === 'PGRST116') {
         // Perfil não existe, tentar criar ou aguardar trigger
-        if (retryCount < 3) {
-          console.log(`Perfil não encontrado, tentativa ${retryCount + 1}/3...`)
-          setTimeout(() => loadProfile(userId, retryCount + 1), 1000)
+        if (retryCount < 2) { // Reduzido para 2 tentativas
+          console.log(`Perfil não encontrado, tentativa ${retryCount + 1}/2...`)
+          setTimeout(() => loadProfile(userId, retryCount + 1), 2000) // Aumentado delay
           return
         } else {
-          console.log('Perfil não encontrado após 3 tentativas, continuando sem perfil')
+          console.log('Perfil não encontrado após 2 tentativas, continuando sem perfil')
           setProfile(null)
         }
       } else if (error) {
@@ -38,39 +46,69 @@ export function useAuth() {
       console.error('Erro ao carregar perfil:', error)
       setProfile(null)
     } finally {
-      if (retryCount === 0 || retryCount >= 3) {
-        setLoading(false)
-      }
+      // Sempre define loading como false após tentativas
+      setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     setMounted(true)
     
-    // Verificar sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Timeout de segurança para garantir que loading seja false
+    const safetyTimeout = setTimeout(() => {
+      console.log('Safety timeout: forçando loading = false')
+      setLoading(false)
+    }, 15000) // 15 segundos máximo
+    
+    // Verificar sessão inicial com timeout
+    const getSessionWithTimeout = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 8000)
+        )
+        
+        const sessionPromise = supabase.auth.getSession()
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as { data: { session: AuthSession | null } }
+        
         setUser(session?.user ?? null)
         if (session?.user) {
           await loadProfile(session.user.id)
         } else {
-          setProfile(null)
+          setLoading(false)
+        }
+        clearTimeout(safetyTimeout)
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error)
+        setLoading(false)
+        clearTimeout(safetyTimeout)
+      }
+    }
+
+    getSessionWithTimeout()
+
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        try {
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            await loadProfile(session.user.id)
+          } else {
+            setProfile(null)
+            setLoading(false)
+          }
+        } catch (error) {
+          console.error('Erro no auth state change:', error)
           setLoading(false)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(safetyTimeout)
+    }
   }, [loadProfile])
 
   const signUp = async (email: string, password: string, fullName: string) => {
