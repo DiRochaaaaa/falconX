@@ -170,7 +170,7 @@ export default function Domains() {
                   value={newDomain}
                   onChange={(e) => setNewDomain(e.target.value)}
                   placeholder="exemplo.com"
-                  className="input-field w-full"
+                  className="input-primary w-full"
                   disabled={isAdding || !canAddMore}
                 />
               </div>
