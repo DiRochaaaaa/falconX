@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface CacheItem<T> {
   data: T
   timestamp: number
+  userId: string
 }
 
 interface CacheConfig {
@@ -17,86 +18,148 @@ const defaultConfig: CacheConfig = {
   duration: 30000, // 30 segundos
 }
 
-// Cache global para dados
+// Cache isolado por usuário para evitar vazamento de dados
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const dataCache = new Map<string, CacheItem<any>>()
+const userCaches = new Map<string, Map<string, CacheItem<any>>>()
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getUserCache(userId: string): Map<string, CacheItem<any>> {
+  if (!userCaches.has(userId)) {
+    userCaches.set(userId, new Map())
+  }
+  return userCaches.get(userId)!
+}
+
+// Função para limpar cache de usuário específico
+export function clearUserCache(userId: string) {
+  userCaches.delete(userId)
+}
+
+// Função para limpar todo o cache (útil para logout)
+export function clearAllCache() {
+  userCaches.clear()
+}
 
 export function useDataCache<T>(
   key: string,
   queryFn: () => Promise<T>,
+  userId: string,
   config: Partial<CacheConfig> = {}
 ) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const finalConfig = { ...defaultConfig, ...config }
+  const mountedRef = useRef(true)
+
+  // Só executar se tiver userId válido
+  const shouldExecute = !!userId && userId.trim() !== '' && finalConfig.enabled !== false
 
   const isCacheValid = useCallback((cacheItem: CacheItem<T>) => {
-    return Date.now() - cacheItem.timestamp < finalConfig.duration
-  }, [finalConfig.duration])
+    return (
+      Date.now() - cacheItem.timestamp < finalConfig.duration &&
+      cacheItem.userId === userId // Verificar se o cache pertence ao usuário atual
+    )
+  }, [finalConfig.duration, userId])
 
   const fetchData = useCallback(async (forceRefresh = false) => {
-    // Se disabled, não executar
-    if (finalConfig.enabled === false) {
-      setLoading(false)
-      return
+    if (!shouldExecute) {
+      if (mountedRef.current) {
+        setLoading(false)
+        setData(null)
+        setError(null)
+      }
+      return null
     }
+
+    if (!mountedRef.current) return null
 
     setError(null)
     
+    // Usar cache isolado do usuário
+    const userCache = getUserCache(userId)
+    const cacheKey = key
+    const cached = userCache.get(cacheKey) as CacheItem<T> | undefined
+    
     // Verificar cache primeiro
-    const cached = dataCache.get(key)
     if (!forceRefresh && cached && isCacheValid(cached)) {
-      setData(cached.data)
-      setLoading(false)
+      if (mountedRef.current) {
+        setData(cached.data)
+        setLoading(false)
+      }
       return cached.data
     }
 
     // Se existe cache mas está expirado, mostrar dados antigos enquanto carrega novos
-    if (cached && !forceRefresh) {
+    if (cached && !forceRefresh && mountedRef.current) {
       setData(cached.data)
     }
 
-    setLoading(true)
+    if (mountedRef.current) {
+      setLoading(true)
+    }
 
     try {
       const result = await queryFn()
       
-      // Atualizar cache
-      dataCache.set(key, {
+      if (!mountedRef.current) return null
+
+      // Atualizar cache com userId para segurança
+      userCache.set(cacheKey, {
         data: result,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        userId: userId
       })
 
       setData(result)
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      setError(errorMessage)
-      console.error(`Erro ao carregar dados para ${key}:`, error)
       
-      // Se tem cache antigo, usar ele
-      if (cached) {
-        setData(cached.data)
+      if (mountedRef.current) {
+        setError(errorMessage)
+        console.error(`Erro ao carregar dados para ${key}:`, error)
+        
+        // Se tem cache antigo do mesmo usuário, usar ele
+        if (cached && cached.userId === userId) {
+          setData(cached.data)
+        }
       }
       
       throw error
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
-  }, [key, queryFn, isCacheValid, finalConfig.enabled])
+  }, [key, queryFn, isCacheValid, shouldExecute, userId])
 
   const refresh = useCallback(() => {
     return fetchData(true)
   }, [fetchData])
 
   const invalidate = useCallback(() => {
-    dataCache.delete(key)
-  }, [key])
+    if (userId) {
+      const userCache = getUserCache(userId)
+      userCache.delete(key)
+    }
+  }, [key, userId])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    mountedRef.current = true
+    
+    if (shouldExecute) {
+      fetchData()
+    } else {
+      setLoading(false)
+      setData(null)
+      setError(null)
+    }
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [fetchData, shouldExecute])
 
   return {
     data,
@@ -104,16 +167,16 @@ export function useDataCache<T>(
     error,
     refresh,
     invalidate,
-    isStale: data ? !isCacheValid(dataCache.get(key) || { data: data, timestamp: 0 }) : false
+    isStale: data && userId ? 
+      !isCacheValid((getUserCache(userId).get(key) as CacheItem<T>) || { data: data, timestamp: 0, userId }) : 
+      false
   }
 }
 
 // Hooks específicos para dados do dashboard
 export function useDashboardStats(userId: string) {
-  const shouldFetch = !!userId && userId.trim() !== ''
-  
   return useDataCache(
-    `dashboard-stats-${userId || 'no-user'}`,
+    'dashboard-stats',
     async () => {
       if (!userId || userId.trim() === '') {
         throw new Error('User ID required')
@@ -156,18 +219,16 @@ export function useDashboardStats(userId: string) {
         activeActions: activeActionsCount || 0
       }
     },
+    userId,
     { 
       duration: 20000, // 20 segundos para estatísticas
-      enabled: shouldFetch // Só executa se tiver userId
     }
   )
 }
 
 export function useRecentDetections(userId: string) {
-  const shouldFetch = !!userId && userId.trim() !== ''
-  
   return useDataCache(
-    `recent-detections-${userId || 'no-user'}`,
+    'recent-detections',
     async () => {
       if (!userId || userId.trim() === '') {
         throw new Error('User ID required')
@@ -189,18 +250,16 @@ export function useRecentDetections(userId: string) {
         ip_address: detection.ip_address || 'N/A'
       }))
     },
+    userId,
     { 
       duration: 15000, // 15 segundos para detecções recentes
-      enabled: shouldFetch
     }
   )
 }
 
 export function useAllowedDomains(userId: string) {
-  const shouldFetch = !!userId && userId.trim() !== ''
-  
   return useDataCache(
-    `allowed-domains-${userId || 'no-user'}`,
+    'allowed-domains',
     async () => {
       if (!userId || userId.trim() === '') {
         throw new Error('User ID required')
@@ -213,11 +272,12 @@ export function useAllowedDomains(userId: string) {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
       return data || []
     },
+    userId,
     { 
       duration: 25000, // 25 segundos para domínios permitidos
-      enabled: shouldFetch
     }
   )
 } 

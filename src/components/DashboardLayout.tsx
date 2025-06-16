@@ -1,7 +1,8 @@
 'use client'
 
+import React from 'react'
+import { ProtectedRoute } from './ProtectedRoute'
 import Navigation from './Navigation'
-import ProtectedRoute from './ProtectedRoute'
 
 interface DashboardLayoutProps {
   children: React.ReactNode

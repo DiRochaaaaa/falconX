@@ -1,28 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useAuth } from '@/hooks/useAuth'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function Home() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (user && !loading) {
-      router.push('/dashboard')
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-main flex items-center justify-center">
-        <div className="loading-spinner h-12 w-12"></div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-main">
       {/* Header */}
@@ -195,7 +175,13 @@ export default function Home() {
                     <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Ações básicas
+                    Alertas por email
+                  </li>
+                  <li className="flex items-center text-gray-300">
+                    <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Suporte prioritário
                   </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
@@ -205,10 +191,10 @@ export default function Home() {
             </div>
 
             {/* Silver Plan */}
-            <div className="card card-hover animate-fade-in border-green-400/40" style={{animationDelay: '0.2s'}}>
-              <div className="absolute whitespace-nowrap -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-green text-white px-3 py-1 rounded-full text-xs font-medium">
-                  Mais Popular
+            <div className="card card-hover animate-fade-in border-2 border-green-500/50 relative" style={{animationDelay: '0.2s'}}>
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gradient-green text-white text-xs font-bold px-3 py-1 rounded-full">
+                  MAIS POPULAR
                 </span>
               </div>
               <div className="text-center">
@@ -233,6 +219,12 @@ export default function Home() {
                     </svg>
                     Ações automáticas
                   </li>
+                  <li className="flex items-center text-gray-300">
+                    <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    API completa
+                  </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
                   Escolher Silver
@@ -256,13 +248,19 @@ export default function Home() {
                     <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    IA avançada
+                    Detecção enterprise
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Suporte prioritário
+                    Suporte 24/7
+                  </li>
+                  <li className="flex items-center text-gray-300">
+                    <svg className="h-4 w-4 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Consultoria dedicada
                   </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
@@ -277,62 +275,60 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="card animate-fade-in">
-            <h2 className="text-3xl font-bold text-white mb-4">
+          <div className="animate-fade-in">
+            <h2 className="text-4xl font-bold text-white mb-6">
               Pronto para Proteger seus Funnels?
             </h2>
-            <p className="text-xl text-gray-400 mb-8">
-              Comece gratuitamente e veja como o Falcon X pode proteger seu negócio contra clones.
+            <p className="text-xl text-gray-300 mb-8">
+              Junte-se a centenas de empreendedores que já protegem seus negócios com o Falcon X
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register" className="btn-primary text-lg px-8 py-4">
-                Começar Grátis Agora
-              </Link>
-              <Link href="/login" className="btn-ghost text-lg px-8 py-4">
-                Já tenho uma conta
-              </Link>
-            </div>
+            <Link href="/register" className="btn-primary text-lg px-8 py-4 inline-flex items-center gap-2">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Começar Agora - É Grátis
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="glass-strong border-t border-green-500/20 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-xl font-bold text-gradient mb-4">Falcon X</h3>
-              <p className="text-gray-400 text-sm">
-                Proteja seus funnels de vendas contra clones com detecção em tempo real e ações automáticas.
+              <p className="text-gray-400">
+                Proteja seus funnels contra clones com tecnologia avançada de detecção.
               </p>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Produto</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Recursos</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Preços</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">API</a></li>
+              <ul className="space-y-2">
+                <li><Link href="#features" className="text-gray-400 hover:text-white transition-colors">Recursos</Link></li>
+                <li><Link href="#pricing" className="text-gray-400 hover:text-white transition-colors">Preços</Link></li>
+                <li><Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Documentação</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2">
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">Sobre</Link></li>
+                <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contato</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacidade</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Suporte</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Documentação</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Contato</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Status</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Privacidade</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Termos</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Cookies</a></li>
+              <ul className="space-y-2">
+                <li><Link href="/help" className="text-gray-400 hover:text-white transition-colors">Central de Ajuda</Link></li>
+                <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Fale Conosco</Link></li>
+                <li><Link href="/status" className="text-gray-400 hover:text-white transition-colors">Status</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <p className="text-gray-400 text-sm">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400">
               © 2024 Falcon X. Todos os direitos reservados.
             </p>
           </div>

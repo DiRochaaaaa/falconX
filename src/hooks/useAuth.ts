@@ -1,22 +1,28 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '../lib/supabase'
+import { clearUserCache } from './useDataCache'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [initialized, setInitialized] = useState(false)
+  const mountedRef = useRef(true)
 
   const loadProfile = useCallback(async (userId: string, userEmail?: string, userFullName?: string) => {
+    if (!mountedRef.current) return null
+
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
+
+      if (!mountedRef.current) return null
 
       if (error && error.code === 'PGRST116') {
         // Profile não existe - criar profile básico
@@ -41,78 +47,108 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
-      setProfile(null)
+      if (mountedRef.current) {
+        setProfile(null)
+      }
       return null
     }
   }, [])
 
-  const checkAuth = useCallback(async () => {
+  const initializeAuth = useCallback(async () => {
+    if (!mountedRef.current) return
+
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
       
+      if (!mountedRef.current) return
+
       if (error) {
-        console.error('Erro ao verificar sessão:', error)
+        console.error('Erro ao verificar sessão inicial:', error)
         setUser(null)
         setProfile(null)
-        setIsAuthenticated(false)
+        setInitialized(true)
+        setLoading(false)
         return
       }
       
       setUser(session?.user ?? null)
-      setIsAuthenticated(!!session?.user)
       
       if (session?.user) {
-        await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
+        await loadProfile(
+          session.user.id, 
+          session.user.email, 
+          session.user.user_metadata?.full_name
+        )
       } else {
         setProfile(null)
       }
-    } catch (error) {
-      console.error('Erro ao verificar autenticação:', error)
-      setUser(null)
-      setProfile(null)
-      setIsAuthenticated(false)
-    } finally {
+      
+      setInitialized(true)
       setLoading(false)
+    } catch (error) {
+      console.error('Erro na inicialização da autenticação:', error)
+      if (mountedRef.current) {
+        setUser(null)
+        setProfile(null)
+        setInitialized(true)
+        setLoading(false)
+      }
     }
   }, [loadProfile])
 
   useEffect(() => {
-    // Verificação inicial
-    checkAuth()
+    mountedRef.current = true
+    
+    // Inicialização
+    initializeAuth()
 
     // Listener para mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Não mostrar loading para mudanças de estado que não são login/logout
-        if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') {
-          setUser(session?.user ?? null)
-          setIsAuthenticated(!!session?.user)
-          
-          if (session?.user) {
-            await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
-          } else {
-            setProfile(null)
-          }
-          return
-        }
-        
+        if (!mountedRef.current) return
+
+        console.log('Auth state change:', event, !!session?.user)
+
+        // Atualizar estado do usuário imediatamente
+        const previousUserId = user?.id
         setUser(session?.user ?? null)
-        setIsAuthenticated(!!session?.user)
         
-        if (session?.user) {
-          await loadProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name)
-        } else {
+        // Lidar com eventos específicos
+        if (event === 'SIGNED_IN' && session?.user) {
+          await loadProfile(
+            session.user.id, 
+            session.user.email, 
+            session.user.user_metadata?.full_name
+          )
+        } else if (event === 'SIGNED_OUT') {
           setProfile(null)
+          // Limpar cache do usuário anterior ao fazer logout
+          if (previousUserId) {
+            clearUserCache(previousUserId)
+          }
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Manter perfil existente, só atualizar user se necessário
+          if (!profile) {
+            await loadProfile(
+              session.user.id, 
+              session.user.email, 
+              session.user.user_metadata?.full_name
+            )
+          }
         }
         
-        setLoading(false)
+        // Garantir que loading seja desabilitado
+        if (mountedRef.current) {
+          setLoading(false)
+        }
       }
     )
 
     return () => {
+      mountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [checkAuth, loadProfile])
+  }, [initializeAuth, loadProfile])
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
@@ -128,16 +164,14 @@ export function useAuth() {
         },
       })
 
-      if (data?.user) {
-        return { data, error: null }
-      }
-
-      return { data: null, error }
+      return { data, error }
     } catch (error) {
       console.error('Erro no signup:', error)
       return { data: null, error }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
   }
 
@@ -150,29 +184,32 @@ export function useAuth() {
         password,
       })
 
-      if (error) {
-        return { data: null, error }
-      }
-
-      return { data, error: null }
+      return { data, error }
     } catch (error) {
       console.error('Erro no signin:', error)
       return { data: null, error }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
   }
 
   const signOut = async () => {
     try {
       setLoading(true)
+      const currentUserId = user?.id
       
       const { error } = await supabase.auth.signOut()
       
-      if (!error) {
+      if (!error && mountedRef.current) {
         setUser(null)
         setProfile(null)
-        setIsAuthenticated(false)
+        
+        // Limpar cache do usuário ao fazer logout
+        if (currentUserId) {
+          clearUserCache(currentUserId)
+        }
       }
       
       return { error }
@@ -180,15 +217,22 @@ export function useAuth() {
       console.error('Erro no signout:', error)
       return { error }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
   }
+
+  const checkAuth = useCallback(async () => {
+    return initializeAuth()
+  }, [initializeAuth])
 
   return {
     user,
     profile,
     loading,
-    isAuthenticated,
+    initialized,
+    isAuthenticated: !!user && initialized,
     signUp,
     signIn,
     signOut,

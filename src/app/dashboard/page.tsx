@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useDashboardStats, useRecentDetections } from '@/hooks/useDataCache'
 import DashboardLayout from '@/components/DashboardLayout'
 import { Icons } from '@/components/Icons'
-import { useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Lazy load components for better performance
 const StatsCards = lazy(() => import('@/components/dashboard/StatsCards'))
@@ -21,20 +22,17 @@ function LoadingSkeleton({ className = '' }: { className?: string }) {
   )
 }
 
-// Error boundary component
+// Error message component
 function ErrorMessage({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+    <div className="card border-red-500/20 bg-red-500/5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Icons.Warning className="h-5 w-5 text-red-400 mr-2" />
-          <span className="text-red-300 text-sm">{error}</span>
+        <div className="flex items-center space-x-3">
+          <Icons.Warning className="h-5 w-5 text-red-400" />
+          <span className="text-red-300">{error}</span>
         </div>
-        <button
-          onClick={onRetry}
-          className="text-red-400 hover:text-red-300 transition-colors"
-        >
-          <Icons.Settings className="h-4 w-4" />
+        <button onClick={onRetry} className="btn-ghost text-sm">
+          Tentar Novamente
         </button>
       </div>
     </div>
@@ -42,17 +40,27 @@ function ErrorMessage({ error, onRetry }: { error: string; onRetry: () => void }
 }
 
 export default function Dashboard() {
-  const { user, profile } = useAuth()
+  const { user, profile, initialized } = useAuth()
+  const router = useRouter()
   const [showError, setShowError] = useState('')
   
-  // Usar hooks de cache otimizados - só quando user estiver disponível
+  // Redirecionar usuários não logados para a landing page
+  useEffect(() => {
+    if (initialized && !user) {
+      router.push('/')
+    }
+  }, [initialized, user, router])
+  
+  // Usar hooks de cache otimizados - só quando user e inicialização estiverem prontos
+  const shouldLoadData = !!(user?.id && initialized)
+  
   const { 
     data: stats, 
     loading: loadingStats, 
     error: statsError, 
     refresh: refreshStats,
     isStale: statsStale 
-  } = useDashboardStats(user?.id || '')
+  } = useDashboardStats(shouldLoadData ? user.id : '')
   
   const { 
     data: recentDetections, 
@@ -60,7 +68,7 @@ export default function Dashboard() {
     error: detectionsError, 
     refresh: refreshDetections,
     isStale: detectionsStale 
-  } = useRecentDetections(user?.id || '')
+  } = useRecentDetections(shouldLoadData ? user.id : '')
 
   const getPlanLimits = () => {
     switch (profile?.plan_type) {
@@ -74,49 +82,60 @@ export default function Dashboard() {
   const planLimits = getPlanLimits()
 
   const handleRefreshAll = async () => {
+    if (!shouldLoadData) return
+    
     try {
       await Promise.all([refreshStats(), refreshDetections()])
-    } catch {
+      setShowError('')
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error)
       setShowError('Erro ao atualizar dados')
     }
   }
 
-  return (
-    <DashboardLayout>
-      {/* Header */}
-      <div className="glass border-b border-green-500/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
-            <div className="animate-fade-in">
-              <h1 className="text-4xl font-bold text-gradient mb-2">Dashboard</h1>
-              <p className="text-gray-300">
-                Bem-vindo de volta, {profile?.full_name || profile?.email || 'Usuário'}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Indicador de dados desatualizados */}
-              {(statsStale || detectionsStale) && (
-                <button
-                  onClick={handleRefreshAll}
-                  className="flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 transition-colors"
-                >
-                  <Icons.Settings className="h-4 w-4" />
-                  <span className="text-sm">Atualizar</span>
-                </button>
-              )}
-              
-              <div className="glass-strong rounded-lg px-4 py-2">
-                <span className="text-sm text-gray-400">Plano:</span>
-                <span className="ml-2 text-green-400 font-semibold capitalize">
-                  {profile?.plan_type || 'free'}
-                </span>
-              </div>
-            </div>
+  // Mostrar loading se ainda não inicializou ou não tem dados básicos
+  if (!initialized || !user) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-main flex items-center justify-center">
+          <div className="text-center">
+            <div className="loading-spinner h-12 w-12 mx-auto mb-4"></div>
+            <p className="text-gray-300 animate-pulse">Carregando dashboard...</p>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
+    )
+  }
 
+  return (
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+            <p className="text-gray-400 mt-1">
+              Bem-vindo de volta, {profile?.full_name || 'Usuário'}!
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            {(statsStale || detectionsStale) && (
+              <div className="flex items-center space-x-2 text-yellow-400 text-sm">
+                <Icons.Warning className="h-4 w-4" />
+                <span>Dados desatualizados</span>
+              </div>
+            )}
+            <button 
+              onClick={handleRefreshAll}
+              className="btn-ghost flex items-center space-x-2"
+              disabled={loadingStats || loadingDetections}
+            >
+              <Icons.Settings className={`h-4 w-4 ${(loadingStats || loadingDetections) ? 'animate-spin' : ''}`} />
+              <span>Atualizar</span>
+            </button>
+          </div>
+        </div>
+
         {/* Error Messages */}
         {showError && (
           <div className="mb-6 animate-fade-in">
