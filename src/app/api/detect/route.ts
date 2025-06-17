@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       referrer,
       userAgent,
       timestamp,
-      pageTitle,
       fbclid,
       utmSource
     } = body
@@ -75,13 +74,16 @@ export async function POST(request: NextRequest) {
       console.error('Erro ao verificar clone existente:', cloneCheckError)
     }
 
+    let cloneId = null
+
     if (existingClone) {
       // Clone já existe - incrementar contador
+      cloneId = existingClone.id
       const { error: updateError } = await supabase
         .from('detected_clones')
         .update({
           detection_count: existingClone.detection_count + 1,
-          last_detected: new Date().toISOString()
+          last_seen: new Date().toISOString()
         })
         .eq('id', existingClone.id)
 
@@ -89,8 +91,8 @@ export async function POST(request: NextRequest) {
         console.error('Erro ao atualizar contador do clone:', updateError)
       }
     } else {
-      // Novo clone - criar registro
-      const { error: insertError } = await supabase
+      // Novo clone - criar registro e obter ID
+      const { data: newClone, error: insertError } = await supabase
         .from('detected_clones')
         .insert({
           user_id: userId,
@@ -98,38 +100,40 @@ export async function POST(request: NextRequest) {
           clone_domain: currentDomain,
           detection_count: 1,
           first_detected: new Date().toISOString(),
-          last_detected: new Date().toISOString(),
+          last_seen: new Date().toISOString(),
           is_active: true
         })
+        .select('id')
+        .single()
 
       if (insertError) {
         console.error('Erro ao inserir novo clone:', insertError)
+      } else {
+        cloneId = newClone?.id
       }
     }
 
-    // Registrar log de detecção
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown'
-    
-    const { error: logError } = await supabase
-      .from('detection_logs')
-      .insert({
-        user_id: userId,
-        clone_domain: currentDomain,
-        original_domain: originalDomain,
-        ip_address: clientIP,
-        user_agent: userAgent,
-        referrer: referrer,
-        page_url: currentUrl,
-        page_title: pageTitle,
-        fbclid: fbclid,
-        utm_source: utmSource,
-        timestamp: timestamp || new Date().toISOString()
-      })
+    // Registrar log de detecção se temos clone_id
+    if (cloneId) {
+      const clientIP = request.headers.get('x-forwarded-for') || 
+                       request.headers.get('x-real-ip') || 
+                       'unknown'
+      
+      const { error: logError } = await supabase
+        .from('detection_logs')
+        .insert({
+          user_id: userId,
+          clone_id: cloneId,
+          ip_address: clientIP,
+          user_agent: userAgent,
+          referrer: referrer,
+          page_url: currentUrl,
+          timestamp: timestamp || new Date().toISOString()
+        })
 
-    if (logError) {
-      console.error('Erro ao registrar log:', logError)
+      if (logError) {
+        console.error('Erro ao registrar log:', logError)
+      }
     }
 
     // Buscar ações configuradas para este clone

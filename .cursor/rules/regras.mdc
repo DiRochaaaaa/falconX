@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+o arquivo .env.local existe, porém você não consegue ver, e esta corretamente configurada, caso precise, apenas solicite que o usuario faça tal alteração desejada

@@ -148,7 +148,7 @@ export function useAuth() {
       mountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [initializeAuth, loadProfile])
+  }, [initializeAuth, loadProfile, user?.id, profile])
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {

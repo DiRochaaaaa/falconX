@@ -238,14 +238,14 @@ export function useRecentDetections(userId: string) {
         .from('detected_clones')
         .select('*')
         .eq('user_id', userId)
-        .order('detected_at', { ascending: false })
+        .order('last_seen', { ascending: false })
         .limit(5)
 
       return (data || []).map(detection => ({
         id: detection.id,
         domain: detection.clone_domain || 'Domínio não identificado',
-        detected_at: detection.detected_at,
-        action_taken: detection.action_taken || 'Nenhuma ação',
+        detected_at: detection.last_seen,
+        action_taken: 'Clone Detectado',
         user_agent: detection.user_agent || 'N/A',
         ip_address: detection.ip_address || 'N/A'
       }))

@@ -1,11 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from './types/database'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://exemplo.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'exemplo-key'
+// Verificar se as variáveis de ambiente estão definidas
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL não está definida no .env.local')
+}
+
+if (!supabaseAnonKey) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY não está definida no .env.local')
+}
+
+// Usar valores fallback apenas para build (não funcionais)
+const finalUrl = supabaseUrl || 'https://placeholder.supabase.co'
+const finalKey = supabaseAnonKey || 'placeholder-key'
 
 // Configuração para funcionar SEM confirmação de email
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(finalUrl, finalKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

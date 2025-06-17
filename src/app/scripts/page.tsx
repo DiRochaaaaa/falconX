@@ -17,28 +17,60 @@ export default function Scripts() {
       code: `<!-- FalconX Detection Script -->
 <script>
 (function() {
-  const apiKey = 'API_KEY';
-  const originalDomain = window.location.hostname;
+  const userId = 'API_KEY'; // Será substituído pela API Key do usuário
+  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
   
-  // Verificar se é um clone
-  fetch('https://api.falconx.com/detect', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey
-    },
-    body: JSON.stringify({
-      domain: originalDomain,
-      userAgent: navigator.userAgent,
-      referrer: document.referrer
+  const currentDomain = window.location.hostname;
+  const currentUrl = window.location.href;
+  
+  // Verificar se é um clone (executar apenas uma vez por página)
+  if (!window.falconXExecuted) {
+    window.falconXExecuted = true;
+    
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: userId,
+        currentDomain: currentDomain,
+        currentUrl: currentUrl,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+        pageTitle: document.title,
+        fbclid: new URLSearchParams(window.location.search).get('fbclid'),
+        utmSource: new URLSearchParams(window.location.search).get('utm_source')
+      })
     })
-  }).then(response => response.json())
+    .then(response => response.json())
     .then(data => {
-      if (data.isClone) {
-        // Ação para clones detectados
-        console.warn('Clone detectado!');
+      console.log('FalconX Response:', data);
+      
+      if (data.status === 'clone_detected') {
+        console.warn('🚨 Clone detectado!', data);
+        
+        // Executar ação se configurada
+        if (data.action === 'redirect_traffic' && data.config?.redirectUrl) {
+          const percentage = data.config.percentage || 100;
+          if (Math.random() * 100 < percentage) {
+            console.log('Redirecionando para:', data.config.redirectUrl);
+            window.location.href = data.config.redirectUrl;
+          }
+        } else if (data.action === 'blank_page') {
+          document.body.innerHTML = '<div style="text-align:center;padding:50px;font-family:Arial;">Este site não está autorizado.</div>';
+        } else if (data.action === 'custom_message' && data.config?.message) {
+          alert(data.config.message);
+        }
+      } else if (data.status === 'authorized') {
+        console.log('✅ Domínio autorizado:', currentDomain);
       }
+    })
+    .catch(error => {
+      console.error('❌ Erro na detecção FalconX:', error);
     });
+  }
 })();
 </script>`
     },
@@ -48,14 +80,46 @@ export default function Scripts() {
       code: `<!-- FalconX Protection Script -->
 <script>
 (function() {
-  const apiKey = 'API_KEY';
-  const allowedDomains = ['seusite.com', 'www.seusite.com'];
+  const userId = 'API_KEY';
+  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
   
-  if (!allowedDomains.includes(window.location.hostname)) {
-    // Bloquear funcionalidades
-    document.body.style.display = 'none';
-    alert('Este site não é autorizado!');
-    window.location.href = 'https://seusite.com';
+  const currentDomain = window.location.hostname;
+  
+  // Verificar se domínio está autorizado
+  if (!window.falconXProtectionExecuted) {
+    window.falconXProtectionExecuted = true;
+    
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: userId,
+        currentDomain: currentDomain,
+        currentUrl: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+        pageTitle: document.title
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'clone_detected') {
+        // Bloquear funcionalidades imediatamente
+        document.body.style.display = 'none';
+        alert('Este site não está autorizado!');
+        
+        // Redirecionar se configurado
+        if (data.config?.redirectUrl) {
+          window.location.href = data.config.redirectUrl;
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Erro na proteção FalconX:', error);
+    });
   }
 })();
 </script>`
@@ -66,25 +130,41 @@ export default function Scripts() {
       code: `<!-- FalconX Analytics Script -->
 <script>
 (function() {
-  const apiKey = 'API_KEY';
+  const userId = 'API_KEY';
+  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
   
   // Coletar dados do visitante
   const data = {
-    domain: window.location.hostname,
-    path: window.location.pathname,
-    userAgent: navigator.userAgent,
+    userId: userId,
+    currentDomain: window.location.hostname,
+    currentUrl: window.location.href,
     referrer: document.referrer,
-    timestamp: new Date().toISOString()
+    userAgent: navigator.userAgent,
+    timestamp: new Date().toISOString(),
+    pageTitle: document.title,
+    fbclid: new URLSearchParams(window.location.search).get('fbclid'),
+    utmSource: new URLSearchParams(window.location.search).get('utm_source')
   };
   
-  fetch('https://api.falconx.com/analytics', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey
-    },
-    body: JSON.stringify(data)
-  });
+  // Enviar dados para analytics (executar apenas uma vez)
+  if (!window.falconXAnalyticsExecuted) {
+    window.falconXAnalyticsExecuted = true;
+    
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('FalconX Analytics:', result);
+    })
+    .catch(error => {
+      console.error('Erro no analytics FalconX:', error);
+    });
+  }
 })();
 </script>`
     }
