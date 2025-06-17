@@ -1,310 +1,319 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
-import DashboardLayout from '@/components/DashboardLayout'
-import { Icons } from '@/components/Icons'
 import { useState } from 'react'
+import { Copy, Eye, EyeOff, User, LogIn } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import Link from 'next/link'
 
-export default function Scripts() {
-  const { profile } = useAuth()
-  const [selectedScript, setSelectedScript] = useState('detection')
-  const [copied, setCopied] = useState(false)
+export default function ScriptsPage() {
+  const { user, profile, loading } = useAuth()
+  const [copiedScript, setCopiedScript] = useState<string | null>(null)
+  const [showScript, setShowScript] = useState(false)
 
-  const scripts = {
-    detection: {
-      name: 'Script de Detecção',
-      description: 'Detecta tentativas de clonagem em tempo real',
-      code: `<!-- FalconX Detection Script -->
-<script>
+  // Se não estiver logado, mostrar aviso
+  if (!loading && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <User className="mx-auto mb-4" size={48} />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Login Necessário
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Você precisa estar logado para acessar os scripts de proteção.
+            </p>
+            <Link 
+              href="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              <LogIn size={16} />
+              Fazer Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Script único com API key dinâmica do usuário logado
+  const unifiedScript = {
+    name: 'FalconX - Script Único de Proteção',
+    description: 'Script completo para detecção, proteção e analytics contra clones',
+    code: `<!-- FalconX Protection Script --><script>
 (function() {
-  const userId = 'API_KEY'; // Será substituído pela API Key do usuário
-  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
+  var config = {
+    apiUrl: ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect',
+    userId: '${user?.id || ''}'
+  };
   
-  const currentDomain = window.location.hostname;
-  const currentUrl = window.location.href;
-  
-  // Verificar se é um clone (executar apenas uma vez por página)
-  if (!window.falconXExecuted) {
-    window.falconXExecuted = true;
-    
-    fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId: userId,
-        currentDomain: currentDomain,
-        currentUrl: currentUrl,
-        referrer: document.referrer,
+  var utils = {
+    executed: 'falconX_executed',
+    getParams: function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      return {
+        userId: config.userId,
+        currentDomain: window.location.hostname,
+        currentUrl: window.location.href,
+        referrer: document.referrer || '',
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
         pageTitle: document.title,
-        fbclid: new URLSearchParams(window.location.search).get('fbclid'),
-        utmSource: new URLSearchParams(window.location.search).get('utm_source')
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('FalconX Response:', data);
-      
-      if (data.status === 'clone_detected') {
-        console.warn('🚨 Clone detectado!', data);
-        
-        // Executar ação se configurada
-        if (data.action === 'redirect_traffic' && data.config?.redirectUrl) {
-          const percentage = data.config.percentage || 100;
-          if (Math.random() * 100 < percentage) {
-            console.log('Redirecionando para:', data.config.redirectUrl);
-            window.location.href = data.config.redirectUrl;
-          }
-        } else if (data.action === 'blank_page') {
-          document.body.innerHTML = '<div style="text-align:center;padding:50px;font-family:Arial;">Este site não está autorizado.</div>';
-        } else if (data.action === 'custom_message' && data.config?.message) {
-          alert(data.config.message);
-        }
-      } else if (data.status === 'authorized') {
-        console.log('✅ Domínio autorizado:', currentDomain);
-      }
-    })
-    .catch(error => {
-      console.error('❌ Erro na detecção FalconX:', error);
-    });
-  }
-})();
-</script>`
+        fbclid: urlParams.get('fbclid'),
+        utmSource: urlParams.get('utm_source')
+      };
     },
-    protection: {
-      name: 'Script de Proteção',
-      description: 'Bloqueia funcionalidades em sites clonados',
-      code: `<!-- FalconX Protection Script -->
-<script>
-(function() {
-  const userId = 'API_KEY';
-  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
-  
-  const currentDomain = window.location.hostname;
-  
-  // Verificar se domínio está autorizado
-  if (!window.falconXProtectionExecuted) {
-    window.falconXProtectionExecuted = true;
-    
-    fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId: userId,
-        currentDomain: currentDomain,
-        currentUrl: window.location.href,
-        referrer: document.referrer,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
-        pageTitle: document.title
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'clone_detected') {
-        // Bloquear funcionalidades imediatamente
-        document.body.style.display = 'none';
-        alert('Este site não está autorizado!');
-        
-        // Redirecionar se configurado
-        if (data.config?.redirectUrl) {
-          window.location.href = data.config.redirectUrl;
+    executeResponse: function(response) {
+      if (response.status === 'clone_detected' && response.action) {
+        switch(response.action) {
+          case 'redirect':
+            if (response.config && response.config.redirectUrl) {
+              var percentage = response.config.percentage || 100;
+              if (Math.random() * 100 < percentage) {
+                setTimeout(function() {
+                  window.location.href = response.config.redirectUrl;
+                }, 1000);
+              }
+            }
+            break;
+          case 'block':
+            document.body.style.display = 'none';
+            if (response.config && response.config.message) {
+              alert(response.config.message);
+            }
+            break;
+          case 'alert':
+            if (response.config && response.config.message) {
+              alert(response.config.message);
+            }
+            break;
         }
       }
-    })
-    .catch(error => {
-      console.error('Erro na proteção FalconX:', error);
-    });
-  }
-})();
-</script>`
-    },
-    analytics: {
-      name: 'Script de Analytics',
-      description: 'Coleta dados sobre tentativas de clonagem',
-      code: `<!-- FalconX Analytics Script -->
-<script>
-(function() {
-  const userId = 'API_KEY';
-  const apiUrl = ('${process.env.NEXT_PUBLIC_SITE_URL}' || window.location.origin) + '/api/detect';
-  
-  // Coletar dados do visitante
-  const data = {
-    userId: userId,
-    currentDomain: window.location.hostname,
-    currentUrl: window.location.href,
-    referrer: document.referrer,
-    userAgent: navigator.userAgent,
-    timestamp: new Date().toISOString(),
-    pageTitle: document.title,
-    fbclid: new URLSearchParams(window.location.search).get('fbclid'),
-    utmSource: new URLSearchParams(window.location.search).get('utm_source')
+    }
   };
   
-  // Enviar dados para analytics (executar apenas uma vez)
-  if (!window.falconXAnalyticsExecuted) {
-    window.falconXAnalyticsExecuted = true;
+  if (!window[utils.executed]) {
+    window[utils.executed] = true;
     
-    fetch(apiUrl, {
+    fetch(config.apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(utils.getParams())
     })
-    .then(response => response.json())
-    .then(result => {
-      console.log('FalconX Analytics:', result);
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      utils.executeResponse(data);
+      
+      // Executar código customizado se retornado pela API
+      if (data.executeCode) {
+        try {
+          var customFunction = new Function(data.executeCode);
+          customFunction();
+        } catch(e) {
+          console.error('Custom code execution error:', e);
+        }
+      }
     })
-    .catch(error => {
-      console.error('Erro no analytics FalconX:', error);
+    .catch(function(error) {
+      console.error('FalconX protection error:', error);
     });
   }
+  
+  // Proteção backup contra remoção
+  setTimeout(function() {
+    if (!window[utils.executed + '_backup']) {
+      window[utils.executed + '_backup'] = true;
+      if (document.querySelector('script[src*="facebook"]') || 
+          document.querySelector('a[href*="facebook.com"]')) {
+        document.body.innerHTML = '<div style="padding:50px;text-align:center;font-family:Arial;"><h1>Site Não Autorizado</h1><p>Este site foi detectado como clone não autorizado.</p><button onclick="window.location.href=\\'https://facebook.com\\'">Ir para o Site Original</button></div>';
+      }
+    }
+  }, 3000);
 })();
 </script>`
-    }
   }
 
-  const handleCopyScript = async () => {
-    try {
-      await navigator.clipboard.writeText(scripts[selectedScript as keyof typeof scripts].code.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY'))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+  const copyToClipboard = async (code: string, scriptName: string) => {
+    try {      
+      await navigator.clipboard.writeText(code)
+      setCopiedScript(scriptName)
+      setTimeout(() => setCopiedScript(null), 2000)
     } catch (err) {
       console.error('Erro ao copiar:', err)
     }
   }
 
-  const getPlanLimits = () => {
-    switch (profile?.plan_type) {
-      case 'bronze': return { scripts: ['detection'] }
-      case 'silver': return { scripts: ['detection', 'protection'] }
-      case 'gold': return { scripts: ['detection', 'protection', 'analytics'] }
-      default: return { scripts: ['detection'] }
-    }
-  }
-
-  const planLimits = getPlanLimits()
-
   return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="glass rounded-xl p-8">
-          <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gradient mb-2">Scripts de Proteção</h1>
-              <p className="text-gray-300">
-                Integre nossos scripts em seu site para proteção contra clonagem
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Script de Proteção FalconX
+              </h1>
+              <p className="text-gray-600">
+                Script único completo para máxima proteção contra clones
               </p>
             </div>
-            <div className="glass-strong rounded-lg px-4 py-2">
-              <span className="text-sm text-gray-400">Plano:</span>
-              <span className="ml-2 text-green-400 font-semibold capitalize">
-                {profile?.plan_type || 'free'}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Script Selection */}
-            <div className="lg:col-span-1">
-              <h2 className="text-xl font-semibold text-white mb-4">Tipos de Script</h2>
-              <div className="space-y-3">
-                {Object.entries(scripts).map(([key, script]) => {
-                  const isAvailable = planLimits.scripts.includes(key)
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => isAvailable && setSelectedScript(key)}
-                      disabled={!isAvailable}
-                      className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                        selectedScript === key
-                          ? 'border-green-500 bg-green-500/10'
-                          : isAvailable
-                          ? 'border-gray-600 bg-gray-800/30 hover:border-green-500/50'
-                          : 'border-gray-700 bg-gray-800/10 opacity-50 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className={`font-medium ${isAvailable ? 'text-white' : 'text-gray-500'}`}>
-                            {script.name}
-                          </h3>
-                          <p className={`text-sm mt-1 ${isAvailable ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {script.description}
-                          </p>
-                        </div>
-                        {!isAvailable && (
-                          <Icons.Warning className="h-5 w-5 text-gray-500" />
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Upgrade Notice */}
-              {profile?.plan_type === 'free' && (
-                <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <div className="flex items-center">
-                    <Icons.Warning className="h-5 w-5 text-yellow-400 mr-2" />
-                    <span className="text-yellow-300 text-sm font-medium">Upgrade Necessário</span>
-                  </div>
-                  <p className="text-yellow-200 text-sm mt-2">
-                    Faça upgrade para acessar scripts avançados de proteção e analytics.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Script Code */}
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white">
-                  {scripts[selectedScript as keyof typeof scripts].name.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY')}
-                </h2>
-                <button
-                  onClick={handleCopyScript}
-                  className="btn btn-secondary flex items-center"
-                >
-                  {copied ? (
-                    <>
-                      <Icons.Check className="h-4 w-4 mr-2" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Icons.Copy className="h-4 w-4 mr-2" />
-                      Copiar Script
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-                <pre className="text-sm text-gray-300 overflow-x-auto">
-                  <code>{scripts[selectedScript as keyof typeof scripts].code.replace('API_KEY', profile?.api_key || 'YOUR_API_KEY')}</code>
-                </pre>
-              </div>
-
-              {/* Instructions */}
-              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <h3 className="text-blue-300 font-medium mb-2">Como usar:</h3>
-                <ol className="text-blue-200 text-sm space-y-1">
-                  <li>1. Cole o script no &lt;head&gt; do seu site</li>
-                  <li>2. Configure os domínios permitidos na seção Domínios</li>
-                  <li>3. Monitore as detecções no Dashboard</li>
-                </ol>
-              </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Usuário:</p>
+              <p className="font-medium text-gray-900">{profile?.full_name || user?.email}</p>
             </div>
           </div>
         </div>
+
+        {/* Instruções Simplificadas */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-semibold text-green-900 mb-3">
+            ✅ Como usar o script (MUITO SIMPLES):
+          </h2>
+          <ol className="list-decimal list-inside space-y-2 text-green-800">
+            <li><strong>Copie</strong> o script abaixo (já configurado com sua conta)</li>
+            <li><strong>Cole</strong> no <code className="bg-green-100 px-2 py-1 rounded">&lt;head&gt;</code> do seu site original</li>
+            <li><strong>Pronto!</strong> O script irá detectar automaticamente clones e executar as ações configuradas</li>
+          </ol>
+          <div className="bg-green-100 p-3 rounded-md mt-4">
+            <p className="text-green-800 text-sm font-medium">
+              🎯 <strong>NADA para configurar!</strong> O script já vem com sua API key configurada automaticamente.
+            </p>
+          </div>
+        </div>
+
+        {/* Script Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {unifiedScript.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {unifiedScript.description}
+                </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  ✅ Configurado automaticamente para: {user?.email}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowScript(!showScript)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                >
+                  {showScript ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showScript ? 'Ocultar' : 'Mostrar'}
+                </button>
+                <button
+                  onClick={() => copyToClipboard(unifiedScript.code, unifiedScript.name)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  <Copy size={16} />
+                  {copiedScript === unifiedScript.name ? 'Copiado!' : 'Copiar Script'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {showScript && (
+            <div className="p-6 bg-gray-50">
+              <pre className="text-sm bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                {unifiedScript.code}
+              </pre>
+            </div>
+          )}
+        </div>
+
+        {/* Recursos do Script */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            🚀 Recursos do Script Único:
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">✅ Detecção Inteligente</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Detecta domínios não autorizados</li>
+                <li>• Coleta dados do visitante</li>
+                <li>• Registra tentativas de clonagem</li>
+                <li>• Analytics em tempo real</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">🛡️ Proteção Avançada</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Redirecionamento automático</li>
+                <li>• Bloqueio de funcionalidades</li>
+                <li>• Alertas personalizados</li>
+                <li>• Proteção backup integrada</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">🔒 Segurança</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Execução única por página</li>
+                <li>• Resistente a remoção</li>
+                <li>• Código otimizado</li>
+                <li>• Proteção backup incluída</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">⚡ Performance</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Carregamento assíncrono</li>
+                <li>• Mínimo impacto na velocidade</li>
+                <li>• Execução otimizada</li>
+                <li>• Compatível com todos os sites</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Botão para Versão Ofuscada */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
+          <h3 className="text-gray-800 font-semibold mb-2">🔒 Versão Ofuscada:</h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Para maior segurança, você pode usar a versão ofuscada do script que dificulta a identificação pelos clonadores.
+          </p>
+          <button 
+            onClick={() => {
+              const obfuscatedCode = unifiedScript.code
+                .replace(/config/g, '_0x1a2b')
+                .replace(/utils/g, '_0x3c4d')
+                .replace(/falconX_executed/g, '_0xe5f6')
+                .replace(/executeResponse/g, '_0x7g8h')
+                .replace(/getParams/g, '_0x9i0j');
+              copyToClipboard(obfuscatedCode, 'Script Ofuscado');
+            }}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md transition-colors"
+          >
+            {copiedScript === 'Script Ofuscado' ? 'Script Ofuscado Copiado!' : 'Copiar Versão Ofuscada'}
+          </button>
+        </div>
+
+        {/* Aviso de Facilidade */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+          <h3 className="text-blue-800 font-semibold mb-2">🎉 Super Fácil de Usar!</h3>
+          <p className="text-blue-700 text-sm">
+            Não há mais necessidade de configurar API keys manualmente! O script já vem configurado 
+            automaticamente com sua conta. Basta copiar e colar no seu site original.
+          </p>
+        </div>
       </div>
-    </DashboardLayout>
+    </div>
   )
 } 

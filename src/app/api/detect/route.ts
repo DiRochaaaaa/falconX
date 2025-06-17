@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Headers de CORS para permitir requisições cross-origin
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+// Handler para requisições OPTIONS (preflight)
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -19,7 +34,10 @@ export async function POST(request: NextRequest) {
     if (!userId || !currentDomain) {
       return NextResponse.json(
         { error: 'userId e currentDomain são obrigatórios' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
       )
     }
 
@@ -34,7 +52,10 @@ export async function POST(request: NextRequest) {
       console.error('Erro ao buscar domínios autorizados:', domainsError)
       return NextResponse.json(
         { error: 'Erro interno do servidor' },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: corsHeaders
+        }
       )
     }
 
@@ -49,6 +70,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         status: 'authorized',
         message: 'Domínio autorizado'
+      }, {
+        headers: corsHeaders
       })
     }
 
@@ -150,6 +173,8 @@ export async function POST(request: NextRequest) {
 
     // Preparar resposta com ação a executar
     let actionResponse = null
+    let executeCode = null
+    
     if (actions && actions.length > 0) {
       const action = actions[0]
       
@@ -176,6 +201,30 @@ export async function POST(request: NextRequest) {
             message: action.custom_message
           }
         }
+        
+        // Gerar código executável personalizado baseado na ação
+        switch(action.action_type) {
+          case 'redirect':
+            if (action.redirect_url) {
+              executeCode = `
+                setTimeout(function() {
+                  window.location.href = '${action.redirect_url}';
+                }, 2000);
+              `;
+            }
+            break;
+          case 'block':
+            executeCode = `
+              document.body.style.display = 'none';
+              document.body.innerHTML = '<div style="padding:50px;text-align:center;font-family:Arial;background:#f5f5f5;"><h1 style="color:#d32f2f;">🚫 Acesso Negado</h1><p style="color:#666;font-size:18px;">${action.custom_message || 'Este site foi detectado como clone não autorizado.'}</p></div>';
+            `;
+            break;
+          case 'alert':
+            executeCode = `
+              alert('${action.custom_message || 'Site detectado como clone não autorizado!'}');
+            `;
+            break;
+        }
       }
     }
 
@@ -185,14 +234,20 @@ export async function POST(request: NextRequest) {
       originalDomain: originalDomain,
       cloneDomain: currentDomain,
       action: actionResponse?.action,
-      config: actionResponse?.config
+      config: actionResponse?.config,
+      executeCode: executeCode
+    }, {
+      headers: corsHeaders
     })
 
   } catch (error) {
     console.error('Erro na API de detecção:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders
+      }
     )
   }
 } 
