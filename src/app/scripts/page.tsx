@@ -1,53 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Eye, EyeOff, User, LogIn } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import Link from 'next/link'
+import DashboardLayout from '@/components/DashboardLayout'
+import { Icons } from '@/components/Icons'
 
 export default function ScriptsPage() {
-  const { user, profile, loading } = useAuth()
+  const { user, profile } = useAuth()
   const [copiedScript, setCopiedScript] = useState<string | null>(null)
   const [showScript, setShowScript] = useState(false)
-
-  // Se não estiver logado, mostrar aviso
-  if (!loading && !user) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <User className="mx-auto mb-4" size={48} />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Login Necessário
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Você precisa estar logado para acessar os scripts de proteção.
-            </p>
-            <Link 
-              href="/login"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-            >
-              <LogIn size={16} />
-              Fazer Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // Script único com API key dinâmica do usuário logado
   const unifiedScript = {
@@ -69,7 +30,7 @@ export default function ScriptsPage() {
         currentDomain: window.location.hostname,
         currentUrl: window.location.href,
         referrer: document.referrer || '',
-        userAgent: navigator.userAgent,
+      userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
         pageTitle: document.title,
         fbclid: urlParams.get('fbclid'),
@@ -90,7 +51,7 @@ export default function ScriptsPage() {
             }
             break;
           case 'block':
-            document.body.style.display = 'none';
+    document.body.style.display = 'none';
             if (response.config && response.config.message) {
               alert(response.config.message);
             }
@@ -107,10 +68,10 @@ export default function ScriptsPage() {
   
   if (!window[utils.executed]) {
     window[utils.executed] = true;
-    
+  
     fetch(config.apiUrl, {
-      method: 'POST',
-      headers: {
+    method: 'POST',
+    headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(utils.getParams())
@@ -146,10 +107,10 @@ export default function ScriptsPage() {
   }, 3000);
 })();
 </script>`
-  }
+    }
 
   const copyToClipboard = async (code: string, scriptName: string) => {
-    try {      
+    try {
       await navigator.clipboard.writeText(code)
       setCopiedScript(scriptName)
       setTimeout(() => setCopiedScript(null), 2000)
@@ -159,161 +120,181 @@ export default function ScriptsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between">
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="glass rounded-xl p-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Script de Proteção FalconX
-              </h1>
-              <p className="text-gray-600">
-                Script único completo para máxima proteção contra clones
+              <h1 className="text-3xl font-bold text-gradient mb-2">Scripts de Proteção</h1>
+              <p className="text-gray-300">
+                Script único para máxima proteção contra clones
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Usuário:</p>
-              <p className="font-medium text-gray-900">{profile?.full_name || user?.email}</p>
+            <div className="glass-strong rounded-lg px-4 py-2">
+              <span className="text-sm text-gray-400">
+                {profile?.full_name || user?.email}
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Instruções Simplificadas */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-semibold text-green-900 mb-3">
-            ✅ Como usar o script (MUITO SIMPLES):
-          </h2>
-          <ol className="list-decimal list-inside space-y-2 text-green-800">
-            <li><strong>Copie</strong> o script abaixo (já configurado com sua conta)</li>
-            <li><strong>Cole</strong> no <code className="bg-green-100 px-2 py-1 rounded">&lt;head&gt;</code> do seu site original</li>
-            <li><strong>Pronto!</strong> O script irá detectar automaticamente clones e executar as ações configuradas</li>
-          </ol>
-          <div className="bg-green-100 p-3 rounded-md mt-4">
-            <p className="text-green-800 text-sm font-medium">
-              🎯 <strong>NADA para configurar!</strong> O script já vem com sua API key configurada automaticamente.
-            </p>
+          {/* Instruções */}
+          <div className="card mb-8 p-6 border-blue-500/20 bg-blue-500/5">
+            <div className="flex items-start space-x-3 mb-4">
+              <Icons.Code className="h-6 w-6 text-blue-400 mt-0.5" />
+                        <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Como usar (3 passos simples):</h3>
+                <ol className="list-decimal list-inside space-y-2 text-gray-300">
+                  <li><strong className="text-white">Copie</strong> o script abaixo (já configurado automaticamente)</li>
+                  <li><strong className="text-white">Cole</strong> no <code className="bg-gray-800 px-2 py-1 rounded text-blue-400">&lt;head&gt;</code> do seu site original</li>
+                  <li><strong className="text-white">Pronto!</strong> A proteção estará ativa automaticamente</li>
+                </ol>
+              </div>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-4">
+              <p className="text-blue-300 text-sm font-medium">
+                🎯 <strong>Nenhuma configuração necessária!</strong> O script já vem com sua API key configurada automaticamente.
+              </p>
+            </div>
+                  </div>
+
+          {/* Script Card */}
+          <div className="card mb-8">
+            <div className="p-6 border-b border-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-1">
+                    {unifiedScript.name}
+                  </h3>
+                  <p className="text-gray-400 mb-2">
+                    {unifiedScript.description}
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-green-400 rounded-full"></div>
+                    <span className="text-sm text-green-400">Configurado para: {user?.email}</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                <button
+                    onClick={() => setShowScript(!showScript)}
+                    className="btn-ghost"
+                >
+                    {showScript ? (
+                    <>
+                        <Icons.ChevronDown className="h-4 w-4 mr-2" />
+                        Ocultar
+                    </>
+                  ) : (
+                    <>
+                        <Icons.Code className="h-4 w-4 mr-2" />
+                        Mostrar
+                    </>
+                  )}
+                </button>
+                  <button
+                    onClick={() => copyToClipboard(unifiedScript.code, unifiedScript.name)}
+                    className="btn-primary"
+                  >
+                    <Icons.Copy className="h-4 w-4 mr-2" />
+                    {copiedScript === unifiedScript.name ? 'Copiado!' : 'Copiar Script'}
+                  </button>
+                </div>
+              </div>
+              </div>
+
+            {showScript && (
+              <div className="p-6 bg-gray-900/50">
+                <pre className="text-sm text-green-400 bg-gray-950 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap border border-gray-800">
+                  {unifiedScript.code}
+                </pre>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Script Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
+          {/* Recursos do Script */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="card p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Icons.Warning className="h-6 w-6 text-green-400" />
+                <h3 className="text-lg font-semibold text-white">Detecção Inteligente</h3>
+              </div>
+              <ul className="space-y-2 text-gray-300">
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-green-400 rounded-full"></div>
+                  <span>Detecta domínios não autorizados</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-green-400 rounded-full"></div>
+                  <span>Coleta dados do visitante</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-green-400 rounded-full"></div>
+                  <span>Registra tentativas de clonagem</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-green-400 rounded-full"></div>
+                  <span>Analytics em tempo real</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="card p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Icons.Lightning className="h-6 w-6 text-blue-400" />
+                <h3 className="text-lg font-semibold text-white">Proteção Avançada</h3>
+              </div>
+              <ul className="space-y-2 text-gray-300">
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-blue-400 rounded-full"></div>
+                  <span>Redirecionamento automático</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-blue-400 rounded-full"></div>
+                  <span>Bloqueio de funcionalidades</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-blue-400 rounded-full"></div>
+                  <span>Alertas personalizados</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="h-1 w-1 bg-blue-400 rounded-full"></div>
+                  <span>Proteção backup integrada</span>
+                </li>
+              </ul>
+            </div>
+              </div>
+
+          {/* Versão Ofuscada */}
+          <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {unifiedScript.name}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {unifiedScript.description}
-                </p>
-                <p className="text-xs text-blue-600 mt-2">
-                  ✅ Configurado automaticamente para: {user?.email}
+                <div className="flex items-center space-x-3 mb-2">
+                  <Icons.Settings className="h-6 w-6 text-yellow-400" />
+                  <h3 className="text-lg font-semibold text-white">Versão Ofuscada</h3>
+                </div>
+                <p className="text-gray-400">
+                  Para maior segurança, use a versão ofuscada que dificulta a identificação pelos clonadores.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowScript(!showScript)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                >
-                  {showScript ? <EyeOff size={16} /> : <Eye size={16} />}
-                  {showScript ? 'Ocultar' : 'Mostrar'}
-                </button>
-                <button
-                  onClick={() => copyToClipboard(unifiedScript.code, unifiedScript.name)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                >
-                  <Copy size={16} />
-                  {copiedScript === unifiedScript.name ? 'Copiado!' : 'Copiar Script'}
-                </button>
-              </div>
+              <button 
+                onClick={() => {
+                  const obfuscatedCode = unifiedScript.code
+                    .replace(/config/g, '_0x1a2b')
+                    .replace(/utils/g, '_0x3c4d')
+                    .replace(/falconX_executed/g, '_0xe5f6')
+                    .replace(/executeResponse/g, '_0x7g8h')
+                    .replace(/getParams/g, '_0x9i0j');
+                  copyToClipboard(obfuscatedCode, 'Script Ofuscado');
+                }}
+                className="btn-secondary"
+              >
+                <Icons.Copy className="h-4 w-4 mr-2" />
+                {copiedScript === 'Script Ofuscado' ? 'Copiado!' : 'Copiar Ofuscado'}
+              </button>
             </div>
           </div>
-
-          {showScript && (
-            <div className="p-6 bg-gray-50">
-              <pre className="text-sm bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                {unifiedScript.code}
-              </pre>
-            </div>
-          )}
-        </div>
-
-        {/* Recursos do Script */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            🚀 Recursos do Script Único:
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">✅ Detecção Inteligente</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Detecta domínios não autorizados</li>
-                <li>• Coleta dados do visitante</li>
-                <li>• Registra tentativas de clonagem</li>
-                <li>• Analytics em tempo real</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">🛡️ Proteção Avançada</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Redirecionamento automático</li>
-                <li>• Bloqueio de funcionalidades</li>
-                <li>• Alertas personalizados</li>
-                <li>• Proteção backup integrada</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">🔒 Segurança</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Execução única por página</li>
-                <li>• Resistente a remoção</li>
-                <li>• Código otimizado</li>
-                <li>• Proteção backup incluída</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">⚡ Performance</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Carregamento assíncrono</li>
-                <li>• Mínimo impacto na velocidade</li>
-                <li>• Execução otimizada</li>
-                <li>• Compatível com todos os sites</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Botão para Versão Ofuscada */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
-          <h3 className="text-gray-800 font-semibold mb-2">🔒 Versão Ofuscada:</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Para maior segurança, você pode usar a versão ofuscada do script que dificulta a identificação pelos clonadores.
-          </p>
-          <button 
-            onClick={() => {
-              const obfuscatedCode = unifiedScript.code
-                .replace(/config/g, '_0x1a2b')
-                .replace(/utils/g, '_0x3c4d')
-                .replace(/falconX_executed/g, '_0xe5f6')
-                .replace(/executeResponse/g, '_0x7g8h')
-                .replace(/getParams/g, '_0x9i0j');
-              copyToClipboard(obfuscatedCode, 'Script Ofuscado');
-            }}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md transition-colors"
-          >
-            {copiedScript === 'Script Ofuscado' ? 'Script Ofuscado Copiado!' : 'Copiar Versão Ofuscada'}
-          </button>
-        </div>
-
-        {/* Aviso de Facilidade */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
-          <h3 className="text-blue-800 font-semibold mb-2">🎉 Super Fácil de Usar!</h3>
-          <p className="text-blue-700 text-sm">
-            Não há mais necessidade de configurar API keys manualmente! O script já vem configurado 
-            automaticamente com sua conta. Basta copiar e colar no seu site original.
-          </p>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 } 
