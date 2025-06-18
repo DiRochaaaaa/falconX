@@ -7,12 +7,14 @@ interface Toast {
   id: string
   type: 'success' | 'error' | 'warning' | 'info'
   title: string
-  message?: string
-  duration?: number
-  action?: {
-    label: string
-    onClick: () => void
-  }
+  message?: string | undefined
+  duration?: number | undefined
+  action?:
+    | {
+        label: string
+        onClick: () => void
+      }
+    | undefined
 }
 
 interface ToastContextType {
@@ -55,6 +57,8 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       }, toast.duration)
       return () => clearTimeout(timer)
     }
+    // Retorno explícito para satisfazer TypeScript
+    return undefined
   }, [toast.duration, toast.id, onRemove])
 
   const handleRemove = () => {
@@ -66,7 +70,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   const getToastStyles = () => {
     const baseStyles = 'border-l-4 shadow-lg backdrop-blur-sm'
-    
+
     switch (toast.type) {
       case 'success':
         return `${baseStyles} bg-green-500/10 border-green-500 text-green-100`
@@ -100,37 +104,34 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
     <div
       className={`
         transform transition-all duration-300 ease-in-out
-        ${isVisible && !isRemoving 
-          ? 'translate-x-0 opacity-100 scale-100' 
-          : 'translate-x-full opacity-0 scale-95'
+        ${
+          isVisible && !isRemoving
+            ? 'translate-x-0 scale-100 opacity-100'
+            : 'translate-x-full scale-95 opacity-0'
         }
       `}
     >
-      <div className={`rounded-lg p-4 mb-3 ${getToastStyles()}`}>
+      <div className={`mb-3 rounded-lg p-4 ${getToastStyles()}`}>
         <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {getIcon()}
-          </div>
-          
+          <div className="flex-shrink-0">{getIcon()}</div>
+
           <div className="ml-3 flex-1">
-            <h4 className="font-medium text-sm">{toast.title}</h4>
-            {toast.message && (
-              <p className="text-sm opacity-90 mt-1">{toast.message}</p>
-            )}
-            
+            <h4 className="text-sm font-medium">{toast.title}</h4>
+            {toast.message && <p className="mt-1 text-sm opacity-90">{toast.message}</p>}
+
             {toast.action && (
               <button
                 onClick={toast.action.onClick}
-                className="text-sm underline mt-2 hover:no-underline transition-all"
+                className="mt-2 text-sm underline transition-all hover:no-underline"
               >
                 {toast.action.label}
               </button>
             )}
           </div>
-          
+
           <button
             onClick={handleRemove}
-            className="flex-shrink-0 ml-4 text-gray-400 hover:text-white transition-colors"
+            className="ml-4 flex-shrink-0 text-gray-400 transition-colors hover:text-white"
           >
             <Icons.X className="h-4 w-4" />
           </button>
@@ -148,11 +149,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const toast: Toast = {
       id,
       duration: 5000, // 5 segundos por padrão
-      ...toastData
+      ...toastData,
     }
-    
+
     setToasts(prev => [...prev, toast])
-    
+
     // Limitar número de toasts visíveis
     if (toasts.length >= 5) {
       setToasts(prev => prev.slice(1))
@@ -163,43 +164,41 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts(prev => prev.filter(toast => toast.id !== id))
   }
 
-  const success = (title: string, message?: string) => {
+  const success = (title: string, message?: string | undefined) => {
     addToast({ type: 'success', title, message })
   }
 
-  const error = (title: string, message?: string) => {
+  const error = (title: string, message?: string | undefined) => {
     addToast({ type: 'error', title, message, duration: 7000 }) // Erros ficam mais tempo
   }
 
-  const warning = (title: string, message?: string) => {
+  const warning = (title: string, message?: string | undefined) => {
     addToast({ type: 'warning', title, message })
   }
 
-  const info = (title: string, message?: string) => {
+  const info = (title: string, message?: string | undefined) => {
     addToast({ type: 'info', title, message })
   }
 
   return (
-    <ToastContext.Provider value={{
-      addToast,
-      removeToast,
-      success,
-      error,
-      warning,
-      info
-    }}>
+    <ToastContext.Provider
+      value={{
+        addToast,
+        removeToast,
+        success,
+        error,
+        warning,
+        info,
+      }}
+    >
       {children}
-      
+
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 max-w-sm w-full">
+      <div className="fixed right-4 top-4 z-50 w-full max-w-sm">
         {toasts.map(toast => (
-          <ToastItem
-            key={toast.id}
-            toast={toast}
-            onRemove={removeToast}
-          />
+          <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}
       </div>
     </ToastContext.Provider>
   )
-} 
+}

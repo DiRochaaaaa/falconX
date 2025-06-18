@@ -9,18 +9,18 @@
   --bg-primary: #0a0a0a;
   --bg-secondary: #111111;
   --bg-tertiary: #1a1a1a;
-  
+
   /* Gradientes verdes */
   --gradient-primary: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
   --gradient-secondary: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
   --gradient-accent: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%);
-  
+
   /* Cores de texto */
   --text-primary: #ffffff;
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
   --text-accent: #10b981;
-  
+
   /* Bordas e sombras */
   --border-primary: rgba(16, 185, 129, 0.2);
   --border-secondary: rgba(255, 255, 255, 0.1);
@@ -31,7 +31,7 @@
 /* Reset e base */
 * {
   box-sizing: border-box;
-  }
+}
 
 html {
   scroll-behavior: smooth;
@@ -40,7 +40,11 @@ html {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   line-height: 1.6;
   overflow-x: hidden;
 }
@@ -79,7 +83,7 @@ body {
 
 /* Cards */
 .card {
-  @apply bg-gray-900/50 backdrop-blur-md rounded-xl border border-green-500/20 p-6;
+  @apply rounded-xl border border-green-500/20 bg-gray-900/50 p-6 backdrop-blur-md;
   box-shadow: var(--shadow-primary);
   position: relative;
 }
@@ -96,7 +100,7 @@ body {
 
 /* Botões */
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 relative overflow-hidden;
+  @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg px-6 py-3 font-medium transition-all duration-300;
   background: var(--gradient-primary);
   color: white;
   border: 1px solid transparent;
@@ -113,7 +117,7 @@ body {
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium transition-all duration-300;
   background: rgba(16, 185, 129, 0.1);
   color: var(--text-accent);
   border: 1px solid var(--border-primary);
@@ -126,7 +130,7 @@ body {
 }
 
 .btn-ghost {
-  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  @apply rounded-lg px-6 py-3 font-medium transition-all duration-300;
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-secondary);
@@ -141,7 +145,7 @@ body {
 
 /* Inputs */
 .input-primary {
-  @apply w-full px-4 py-3 rounded-lg border transition-all duration-300;
+  @apply w-full rounded-lg border px-4 py-3 transition-all duration-300;
   background: var(--bg-secondary);
   border-color: var(--border-secondary);
   color: var(--text-primary);
@@ -185,18 +189,35 @@ body {
 
 /* Animações */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+  }
 }
 
 .animate-fade-in {
@@ -252,13 +273,12 @@ body {
   .card {
     @apply p-4;
   }
-  
+
   .btn-primary,
   .btn-secondary,
   .btn-ghost {
     @apply px-4 py-2 text-sm;
   }
-
 }
 
 /* Melhorias de acessibilidade */
@@ -268,11 +288,11 @@ body {
   .animate-glow {
     animation: none;
   }
-  
+
   .card-hover:hover {
     transform: none;
   }
-  
+
   .btn-primary:hover,
   .btn-secondary:hover,
   .btn-ghost:hover {

@@ -6,14 +6,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  
+
   // Configurações do compilador
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
-  
+
   // Headers otimizados para cache
   async headers() {
     return [
@@ -22,19 +25,19 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
       {
         source: '/favicon.ico',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400'
-          }
-        ]
-      }
+            value: 'public, max-age=86400',
+          },
+        ],
+      },
     ]
   },
 
@@ -42,7 +45,7 @@ const nextConfig = {
   experimental: {
     scrollRestoration: true,
     // Otimizações para bundle size
-    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr']
+    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
   },
 
   // Configurações de imagem otimizadas
@@ -52,4 +55,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig

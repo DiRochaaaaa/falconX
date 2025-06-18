@@ -12,54 +12,60 @@ export function useAuth() {
   const [initialized, setInitialized] = useState(false)
   const mountedRef = useRef(true)
 
-  const loadProfile = useCallback(async (userId: string, userEmail?: string, userFullName?: string) => {
-    if (!mountedRef.current) return null
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
+  const loadProfile = useCallback(
+    async (userId: string, userEmail?: string, userFullName?: string) => {
       if (!mountedRef.current) return null
 
-      if (error && error.code === 'PGRST116') {
-        // Profile não existe - criar profile básico
-        const basicProfile: UserProfile = {
-          id: userId,
-          email: userEmail || '',
-          full_name: userFullName || 'Usuário',
-          plan_type: 'free',
-          api_key: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (!mountedRef.current) return null
+
+        if (error && error.code === 'PGRST116') {
+          // Profile não existe - criar profile básico
+          const basicProfile: UserProfile = {
+            id: userId,
+            email: userEmail || '',
+            full_name: userFullName || 'Usuário',
+            plan_type: 'free',
+            api_key: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+          setProfile(basicProfile)
+          return basicProfile
+        } else if (error) {
+          console.error('Erro ao carregar perfil:', error)
+          setProfile(null)
+          return null
+        } else {
+          setProfile(data)
+          return data
         }
-        setProfile(basicProfile)
-        return basicProfile
-      } else if (error) {
+      } catch (error) {
         console.error('Erro ao carregar perfil:', error)
-        setProfile(null)
+        if (mountedRef.current) {
+          setProfile(null)
+        }
         return null
-      } else {
-        setProfile(data)
-        return data
       }
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error)
-      if (mountedRef.current) {
-        setProfile(null)
-      }
-      return null
-    }
-  }, [])
+    },
+    []
+  )
 
   const initializeAuth = useCallback(async () => {
     if (!mountedRef.current) return
 
     try {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession()
+
       if (!mountedRef.current) return
 
       if (error) {
@@ -70,19 +76,19 @@ export function useAuth() {
         setLoading(false)
         return
       }
-      
+
       setUser(session?.user ?? null)
-      
+
       if (session?.user) {
         await loadProfile(
-          session.user.id, 
-          session.user.email, 
+          session.user.id,
+          session.user.email,
           session.user.user_metadata?.full_name
         )
       } else {
         setProfile(null)
       }
-      
+
       setInitialized(true)
       setLoading(false)
     } catch (error) {
@@ -98,51 +104,51 @@ export function useAuth() {
 
   useEffect(() => {
     mountedRef.current = true
-    
+
     // Inicialização
     initializeAuth()
 
     // Listener para mudanças de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mountedRef.current) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mountedRef.current) return
 
-        console.log('Auth state change:', event, !!session?.user)
+      // Auth state change event
 
-        // Atualizar estado do usuário imediatamente
-        const previousUserId = user?.id
-        setUser(session?.user ?? null)
-        
-        // Lidar com eventos específicos
-        if (event === 'SIGNED_IN' && session?.user) {
+      // Atualizar estado do usuário imediatamente
+      const previousUserId = user?.id
+      setUser(session?.user ?? null)
+
+      // Lidar com eventos específicos
+      if (event === 'SIGNED_IN' && session?.user) {
+        await loadProfile(
+          session.user.id,
+          session.user.email,
+          session.user.user_metadata?.full_name
+        )
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null)
+        // Limpar cache do usuário anterior ao fazer logout
+        if (previousUserId) {
+          clearUserCache(previousUserId)
+        }
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        // Manter perfil existente, só atualizar user se necessário
+        if (!profile) {
           await loadProfile(
-            session.user.id, 
-            session.user.email, 
+            session.user.id,
+            session.user.email,
             session.user.user_metadata?.full_name
           )
-        } else if (event === 'SIGNED_OUT') {
-          setProfile(null)
-          // Limpar cache do usuário anterior ao fazer logout
-          if (previousUserId) {
-            clearUserCache(previousUserId)
-          }
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Manter perfil existente, só atualizar user se necessário
-          if (!profile) {
-            await loadProfile(
-              session.user.id, 
-              session.user.email, 
-              session.user.user_metadata?.full_name
-            )
-          }
-        }
-        
-        // Garantir que loading seja desabilitado
-        if (mountedRef.current) {
-          setLoading(false)
         }
       }
-    )
+
+      // Garantir que loading seja desabilitado
+      if (mountedRef.current) {
+        setLoading(false)
+      }
+    })
 
     return () => {
       mountedRef.current = false
@@ -153,7 +159,7 @@ export function useAuth() {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setLoading(true)
-      
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -178,7 +184,7 @@ export function useAuth() {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true)
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -199,19 +205,19 @@ export function useAuth() {
     try {
       setLoading(true)
       const currentUserId = user?.id
-      
+
       const { error } = await supabase.auth.signOut()
-      
+
       if (!error && mountedRef.current) {
         setUser(null)
         setProfile(null)
-        
+
         // Limpar cache do usuário ao fazer logout
         if (currentUserId) {
           clearUserCache(currentUserId)
         }
       }
-      
+
       return { error }
     } catch (error) {
       console.error('Erro no signout:', error)
@@ -236,6 +242,6 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
-    checkAuth
+    checkAuth,
   }
-} 
+}

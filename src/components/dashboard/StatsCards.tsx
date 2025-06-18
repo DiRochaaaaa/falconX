@@ -20,13 +20,13 @@ interface StatsCardsProps {
   planLimits: PlanLimits
 }
 
-function StatCard({ 
-  icon: Icon, 
-  title, 
-  value, 
-  loading, 
+function StatCard({
+  icon: Icon,
+  title,
+  value,
+  loading,
   color = 'green',
-  subtitle 
+  subtitle,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>
@@ -40,7 +40,7 @@ function StatCard({
     green: 'bg-gradient-green',
     orange: 'bg-gradient-to-r from-orange-500 to-orange-600',
     red: 'bg-gradient-to-r from-red-500 to-red-600',
-    blue: 'bg-gradient-to-r from-blue-500 to-blue-600'
+    blue: 'bg-gradient-to-r from-blue-500 to-blue-600',
   }
 
   return (
@@ -52,15 +52,9 @@ function StatCard({
         <div className="ml-4 flex-1">
           <p className="text-sm text-gray-400">{title}</p>
           <p className="text-2xl font-bold text-white">
-            {loading ? (
-              <span className="animate-pulse">...</span>
-            ) : (
-              value
-            )}
+            {loading ? <span className="animate-pulse">...</span> : value}
           </p>
-          {subtitle && (
-            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="mt-1 text-xs text-gray-500">{subtitle}</p>}
         </div>
       </div>
     </div>
@@ -73,11 +67,15 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
       <StatCard
         icon={Icons.Globe}
         title="Domínios Monitorados"
-        value={loading ? '...' : `${stats?.allowedDomains || 0}${planLimits.domains > 0 ? `/${planLimits.domains}` : ''}`}
+        value={
+          loading
+            ? '...'
+            : `${stats?.allowedDomains || 0}${planLimits.domains > 0 ? `/${planLimits.domains}` : ''}`
+        }
         loading={loading}
         color="green"
       />
-      
+
       <StatCard
         icon={Icons.Warning}
         title="Clones Detectados"
@@ -85,7 +83,7 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
         loading={loading}
         color="red"
       />
-      
+
       <StatCard
         icon={Icons.Dashboard}
         title="Total de Detecções"
@@ -93,7 +91,7 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
         loading={loading}
         color="orange"
       />
-      
+
       <StatCard
         icon={Icons.Lightning}
         title="Ações Ativas"
@@ -103,4 +101,4 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
       />
     </>
   )
-} 
+}

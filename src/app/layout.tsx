@@ -10,34 +10,27 @@ export const metadata: Metadata = {
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
         {/* DNS Prefetch para Supabase */}
         <link rel="dns-prefetch" href="//supabase.co" />
-        
+
         {/* Preconnect para recursos críticos */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
+
         {/* Favicon otimizado */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        
+
         {/* Meta tags para performance */}
         <meta name="theme-color" content="#10b981" />
         <meta name="color-scheme" content="dark" />
       </head>
-      <body 
-        className="antialiased min-h-screen bg-gradient-main"
-        suppressHydrationWarning={true}
-      >
+      <body className="bg-gradient-main min-h-screen antialiased" suppressHydrationWarning={true}>
         {children}
       </body>
     </html>
   )
-} 
+}

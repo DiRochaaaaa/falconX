@@ -1,9 +1,11 @@
 # Falcon X - Database Schema Documentation
 
 ## 📋 Visão Geral do Sistema
+
 O Falcon X é um SaaS que detecta clones de funis de vendas através de um script ofuscado.
 
 ### Fluxo Principal:
+
 1. Usuário se cadastra e escolhe um plano
 2. Usuário cadastra seus domínios permitidos
 3. Sistema gera script ofuscado único
@@ -20,9 +22,11 @@ O Falcon X é um SaaS que detecta clones de funis de vendas através de um scrip
 ## 📊 Tabelas
 
 ### 1. `profiles` - Perfis de Usuários
+
 Extensão da tabela `auth.users` do Supabase Auth.
 
 **Campos:**
+
 - `id` (UUID, PK) - Referência ao auth.users
 - `email` (TEXT) - Email do usuário
 - `full_name` (TEXT) - Nome completo
@@ -33,9 +37,11 @@ Extensão da tabela `auth.users` do Supabase Auth.
 - `updated_at` (TIMESTAMP)
 
 ### 2. `plans` - Planos de Assinatura
+
 Define os limites e preços dos planos.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `name` (TEXT) - Nome do plano
 - `price` (DECIMAL) - Preço mensal
@@ -45,9 +51,11 @@ Define os limites e preços dos planos.
 - `is_active` (BOOLEAN) - Plano ativo
 
 ### 3. `user_subscriptions` - Assinaturas dos Usuários
+
 Controla as assinaturas ativas.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Referência ao profiles
 - `plan_id` (INTEGER, FK) - Referência ao plans
@@ -57,9 +65,11 @@ Controla as assinaturas ativas.
 - `webhook_data` (JSONB) - Dados do webhook de pagamento
 
 ### 4. `allowed_domains` - Domínios Permitidos
+
 Domínios cadastrados pelo usuário onde o script pode funcionar.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Proprietário do domínio
 - `domain` (TEXT) - Domínio permitido
@@ -67,9 +77,11 @@ Domínios cadastrados pelo usuário onde o script pode funcionar.
 - `created_at` (TIMESTAMP)
 
 ### 5. `generated_scripts` - Scripts Gerados
+
 Scripts ofuscados únicos para cada usuário.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Proprietário do script
 - `script_id` (TEXT) - ID único do script
@@ -79,9 +91,11 @@ Scripts ofuscados únicos para cada usuário.
 - `created_at` (TIMESTAMP)
 
 ### 6. `detected_clones` - Clones Detectados
+
 Domínios que foram detectados usando o script sem autorização.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Usuário que foi clonado
 - `clone_domain` (TEXT) - Domínio que fez o clone
@@ -94,9 +108,11 @@ Domínios que foram detectados usando o script sem autorização.
 - `is_blocked` (BOOLEAN) - Se está bloqueado
 
 ### 7. `clone_actions` - Ações Configuradas
+
 Ações que o usuário configurou para cada clone detectado.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Usuário que configurou
 - `clone_id` (INTEGER, FK) - Clone alvo
@@ -108,9 +124,11 @@ Ações que o usuário configurou para cada clone detectado.
 - `created_at` (TIMESTAMP)
 
 ### 8. `detection_logs` - Logs de Detecção
+
 Log detalhado de todas as detecções para análise.
 
 **Campos:**
+
 - `id` (SERIAL, PK)
 - `user_id` (UUID, FK) - Usuário afetado
 - `clone_id` (INTEGER, FK) - Clone relacionado
@@ -125,6 +143,7 @@ Log detalhado de todas as detecções para análise.
 ## 🔒 Segurança (Row Level Security)
 
 ### Políticas RLS:
+
 - Usuários só veem seus próprios dados
 - API keys são protegidas
 - Logs são isolados por usuário
@@ -133,6 +152,7 @@ Log detalhado de todas as detecções para análise.
 ---
 
 ## 🔑 Índices Importantes
+
 - `profiles.api_key` (único)
 - `allowed_domains.domain` + `user_id`
 - `detected_clones.clone_domain` + `user_id`
@@ -143,18 +163,21 @@ Log detalhado de todas as detecções para análise.
 ## 📈 Enums Utilizados
 
 ### `plan_type_enum`:
+
 - 'free'
-- 'bronze' 
+- 'bronze'
 - 'silver'
 - 'gold'
 
 ### `subscription_status_enum`:
+
 - 'active'
 - 'expired'
 - 'cancelled'
 - 'pending'
 
 ### `action_type_enum`:
+
 - 'redirect_traffic'
 - 'blank_page' (futuro)
-- 'custom_message' (futuro) 
+- 'custom_message' (futuro)

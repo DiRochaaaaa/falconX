@@ -10,7 +10,7 @@ export default function Register() {
     fullName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,7 +20,7 @@ export default function Register() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     })
   }
 
@@ -49,8 +49,8 @@ export default function Register() {
         options: {
           data: {
             full_name: formData.fullName,
-          }
-        }
+          },
+        },
       })
 
       if (error) {
@@ -71,19 +71,29 @@ export default function Register() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-main flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full">
-          <div className="card text-center animate-fade-in">
-            <div className="bg-gradient-green rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md">
+          <div className="card animate-fade-in text-center">
+            <div className="bg-gradient-green mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full p-4">
+              <svg
+                className="h-8 w-8 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Conta criada com sucesso!</h2>
-            <p className="text-gray-400 mb-4">
+            <h2 className="mb-2 text-2xl font-bold text-white">Conta criada com sucesso!</h2>
+            <p className="mb-4 text-gray-400">
               Bem-vindo ao Falcon X! Redirecionando para o dashboard...
             </p>
-            <div className="loading-spinner h-6 w-6 mx-auto"></div>
+            <div className="loading-spinner mx-auto h-6 w-6"></div>
           </div>
         </div>
       </div>
@@ -91,31 +101,41 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-main flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="bg-gradient-main flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
         {/* Header */}
-        <div className="text-center animate-fade-in">
-          <h1 className="text-4xl font-bold text-gradient mb-2">Falcon X</h1>
-          <h2 className="text-2xl font-semibold text-white mb-2">Criar sua conta</h2>
+        <div className="animate-fade-in text-center">
+          <h1 className="text-gradient mb-2 text-4xl font-bold">Falcon X</h1>
+          <h2 className="mb-2 text-2xl font-semibold text-white">Criar sua conta</h2>
           <p className="text-gray-400">Comece a proteger seus funnels gratuitamente</p>
         </div>
 
         {/* Form */}
-        <div className="card animate-fade-in" style={{animationDelay: '0.2s'}}>
+        <div className="card animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <form className="space-y-6" onSubmit={handleRegister}>
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 animate-fade-in">
+              <div className="animate-fade-in rounded-lg border border-red-500/20 bg-red-500/10 p-4">
                 <div className="flex items-center">
-                  <svg className="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="mr-2 h-5 w-5 text-red-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
-                  <span className="text-red-300 text-sm">{error}</span>
+                  <span className="text-sm text-red-300">{error}</span>
                 </div>
               </div>
             )}
 
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-gray-300">
                 Nome Completo
               </label>
               <input
@@ -132,7 +152,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-300">
                 Email
               </label>
               <input
@@ -149,7 +169,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-300">
                 Senha
               </label>
               <input
@@ -163,11 +183,14 @@ export default function Register() {
                 value={formData.password}
                 onChange={handleChange}
               />
-              <p className="text-xs text-gray-500 mt-1">Mínimo de 6 caracteres</p>
+              <p className="mt-1 text-xs text-gray-500">Mínimo de 6 caracteres</p>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Confirmar Senha
               </label>
               <input
@@ -189,15 +212,15 @@ export default function Register() {
                 name="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-600 bg-gray-800 rounded"
+                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-green-500 focus:ring-green-500"
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-400">
                 Aceito os{' '}
-                <a href="#" className="text-green-400 hover:text-green-300 transition-colors">
+                <a href="#" className="text-green-400 transition-colors hover:text-green-300">
                   Termos de Uso
                 </a>{' '}
                 e{' '}
-                <a href="#" className="text-green-400 hover:text-green-300 transition-colors">
+                <a href="#" className="text-green-400 transition-colors hover:text-green-300">
                   Política de Privacidade
                 </a>
               </label>
@@ -206,17 +229,27 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full flex items-center justify-center"
+              className="btn-primary flex w-full items-center justify-center"
             >
               {loading ? (
                 <>
-                  <div className="loading-spinner h-4 w-4 mr-2"></div>
+                  <div className="loading-spinner mr-2 h-4 w-4"></div>
                   Criando conta...
                 </>
               ) : (
                 <>
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  <svg
+                    className="mr-2 h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
                   </svg>
                   Criar Conta Grátis
                 </>
@@ -230,14 +263,17 @@ export default function Register() {
                 <div className="w-full border-t border-gray-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-900 text-gray-400">Ou</span>
+                <span className="bg-gray-900 px-2 text-gray-400">Ou</span>
               </div>
             </div>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
                 Já tem uma conta?{' '}
-                <Link href="/login" className="text-green-400 hover:text-green-300 font-medium transition-colors">
+                <Link
+                  href="/login"
+                  className="font-medium text-green-400 transition-colors hover:text-green-300"
+                >
                   Fazer login
                 </Link>
               </p>
@@ -246,44 +282,86 @@ export default function Register() {
         </div>
 
         {/* Plan Features */}
-        <div className="card animate-fade-in" style={{animationDelay: '0.4s'}}>
-          <h3 className="text-lg font-semibold text-white mb-4 text-center">Plano Gratuito Inclui:</h3>
+        <div className="card animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <h3 className="mb-4 text-center text-lg font-semibold text-white">
+            Plano Gratuito Inclui:
+          </h3>
           <div className="space-y-3">
             <div className="flex items-center">
-              <div className="bg-gradient-green rounded-full p-1 mr-3">
-                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="bg-gradient-green mr-3 rounded-full p-1">
+                <svg
+                  className="h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <span className="text-gray-300 text-sm">1 domínio monitorado</span>
+              <span className="text-sm text-gray-300">1 domínio monitorado</span>
             </div>
             <div className="flex items-center">
-              <div className="bg-gradient-green rounded-full p-1 mr-3">
-                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="bg-gradient-green mr-3 rounded-full p-1">
+                <svg
+                  className="h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <span className="text-gray-300 text-sm">Detecção básica de clones</span>
+              <span className="text-sm text-gray-300">Detecção básica de clones</span>
             </div>
             <div className="flex items-center">
-              <div className="bg-gradient-green rounded-full p-1 mr-3">
-                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="bg-gradient-green mr-3 rounded-full p-1">
+                <svg
+                  className="h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <span className="text-gray-300 text-sm">Dashboard com estatísticas</span>
+              <span className="text-sm text-gray-300">Dashboard com estatísticas</span>
             </div>
             <div className="flex items-center">
-              <div className="bg-gradient-green rounded-full p-1 mr-3">
-                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="bg-gradient-green mr-3 rounded-full p-1">
+                <svg
+                  className="h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
-              <span className="text-gray-300 text-sm">Suporte por email</span>
+              <span className="text-sm text-gray-300">Suporte por email</span>
             </div>
           </div>
-          <div className="mt-4 p-3 glass-strong rounded-lg border border-green-500/30">
-            <p className="text-xs text-green-400 text-center">
+          <div className="glass-strong mt-4 rounded-lg border border-green-500/30 p-3">
+            <p className="text-center text-xs text-green-400">
               ✨ Upgrade a qualquer momento para mais recursos
             </p>
           </div>
@@ -291,4 +369,4 @@ export default function Register() {
       </div>
     </div>
   )
-} 
+}

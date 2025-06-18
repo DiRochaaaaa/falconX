@@ -31,12 +31,8 @@ export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRou
   // Ainda inicializando
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen bg-gradient-main flex items-center justify-center">
-        <LoadingSpinner 
-          size="lg" 
-          text="Verificando autenticação..." 
-          color="primary"
-        />
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <LoadingSpinner size="lg" text="Verificando autenticação..." color="primary" />
       </div>
     )
   }
@@ -44,12 +40,8 @@ export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRou
   // Não autenticado - não renderizar nada (redirecionamento em andamento)
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-main flex items-center justify-center">
-        <LoadingSpinner 
-          size="lg" 
-          text="Redirecionando..." 
-          color="primary"
-        />
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <LoadingSpinner size="lg" text="Redirecionando..." color="primary" />
       </div>
     )
   }
@@ -57,15 +49,11 @@ export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRou
   // Só renderizar se deveria renderizar (evita flash de conteúdo)
   if (!shouldRender) {
     return (
-      <div className="min-h-screen bg-gradient-main flex items-center justify-center">
-        <LoadingSpinner 
-          size="lg" 
-          text="Carregando..." 
-          color="primary"
-        />
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <LoadingSpinner size="lg" text="Carregando..." color="primary" />
       </div>
     )
   }
 
   return <>{children}</>
-} 
+}

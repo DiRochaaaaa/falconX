@@ -1,6 +1,68 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-o arquivo .env.local existe, porém você não consegue ver, e esta corretamente configurada, caso precise, apenas solicite que o usuario faça tal alteração desejada
+---
+description: Unified guardrails for SaaS engineering, project structure, infrastructure, governance and Next.js best practices. These rules are ALWAYS injected so the AI writes safe, maintainable, production-ready code.
+type: Always
+---
+
+## Ⅰ  Engineering & Code-Quality Guardrails
+- **Single Responsibility Principle** – every class, function and n8n workflow must have exactly one reason to change.  
+- **Fail Fast, Fail Loud** – validate every input immediately and throw explicit, descriptive errors; never allow silent failures.  
+- **Type Safety First** – compile with strict TypeScript (`noImplicitAny`, `strictNullChecks`, etc.) and always use generated Supabase types.  
+- **Test Pyramid** – provide unit tests for business rules, integration tests for each endpoint, and a lean set of e2e tests (Playwright/Cypress) for revenue-critical flows.  
+- **Layered Architecture** – keep domain → application (use-cases) → infrastructure → interfaces (API/UI) strictly separated; no cross-layer leaks.  
+- **12-Factor Config** – never hard-code secrets; store configuration only in environment variables or Vault.  
+- **Idempotent & Retryable Jobs** – all background jobs and webhooks must be idempotent and implement exponential back-off.  
+- **Zero-Downtime Migrations** – incremental scripts, backward-compatible DB changes and feature flags when in doubt.  
+- **Observability by Default** – emit structured logs, metrics and OpenTelemetry traces before shipping new code.  
+- **Security-by-Default** – input sanitization, security headers (Helmet), strict CORS, and rate-limits on unauthenticated routes.  
+- **Automated Quality Gates** – ESLint, Prettier and tests must pass in CI; use Husky + lint-staged pre-commit.  
+- **Documentation First** – document public APIs and complex modules with TSDoc/JSDoc and a concise local `README.md`.  
+- **Design for Extension** – use Strategy/Adapter patterns at integration boundaries to avoid vendor lock-in.  
+- **Prefer Explicit over Magic** – avoid reflection-heavy or overly clever frameworks; clarity beats cleverness.  
+- **Small, Reviewed PRs** – limit pull requests to ≤ 400 LOC; include a clear description and QA checklist.  
+
+## Ⅱ  Project-Structure & Infrastructure Guardrails
+- **Declarative Infrastructure Only** – provision infra exclusively with IaC (Terraform, Pulumi or AWS CDK); no manual console clicks.  
+- **Universal Container Contract** – each service ships a `Dockerfile` and local `docker-compose.*.yml` for environment parity.  
+- **Semantic Versioning & CHANGELOG** – tag releases as `MAJOR.MINOR.PATCH` and maintain a machine-readable `CHANGELOG.md` via Conventional Commits.  
+- **Dependency Hygiene** – weekly `npm audit` (or equivalent) runs in CI; block PRs introducing high-severity CVEs unless explicitly waived.  
+- **Architecture Decision Records (ADR)** – document every significant decision in `/docs/adr/YYYY-MM-DD-title.md`; the AI must reference existing ADRs before proposing new alternatives.  
+- **Strict Directory Layout**  
+      src/
+        modules/<feature>/
+          domain/
+          application/
+          infrastructure/
+          ui/
+      docs/
+      infra/  
+  No ad-hoc folders at the repo root.  
+- **Barrel Exports & Index Discipline** – every folder exposing code must have an `index.ts` that re-exports public symbols; keep internal files unexported.  
+- **File-Naming Convention** – `kebab-case.ts` for utilities & hooks, `PascalCase.tsx` for React components, `snake_case.sql` for migrations. AI should rename mismatches automatically.  
+- **CODEOWNERS Enforcement** – maintain a `CODEOWNERS` file; at least one human reviewer is required for every path (AI cannot approve its own PRs).  
+- **Conventional Commits & Commitlint** – all commits must follow `<type>(scope): <message>`; CI rejects non-conforming messages.  
+
+## Ⅲ  Next.js-specific Guardrails
+- **App Router by Default** – create all new modules inside the `app/` directory; use `route.ts` instead of legacy `pages/api`.  
+- **Server vs Client Components**  
+  - React files are Server Components by default.  
+  - Add `"use client"` only when browser state or effects are required.  
+  - Never import libraries that touch `window` or `document` inside a Server Component.  
+- **Naming Convention**  
+  - Pages → `app/<route>/page.tsx`.  
+  - Route actions → `app/<route>/actions.ts`.  
+  - Client Components → `PascalCase.client.tsx`.  
+- **Data Fetching** – prefer `cache()` + native `fetch` or `react-query` per page; for mandatory SSR use `export const dynamic = "force-dynamic"`.  
+- **Incremental Static Regeneration** – if the page can be static, set `export const revalidate = <seconds>`; never revalidate on every request.  
+- **Error & Loading States** – each route must include its own `error.tsx` and `loading.tsx` for consistent UX.  
+- **next.config.js**  
+  - Enable `reactStrictMode: true`, `swcMinify: true`, and `images: { domains:[…] }`.  
+  - Never embed host-specific secrets; rely on env vars.  
+- **Turbopack / CI** – `next build` must run in CI; build failures break the PR.  
+- **i18n** – when multilingual, centralize messages in `/src/i18n/`; no hard-coded strings spread across components.  
+- **Edge Functions** – only when sub-50 ms latency is truly required; justify via ADR before enabling.  
+

@@ -26,14 +26,11 @@ export const supabase = createClient<Database>(finalUrl, finalKey, {
     // Configurações para desenvolvimento sem email
     flowType: 'implicit',
   },
-  db: {
-    schema: 'falconx'
-  },
   global: {
     headers: {
-      'x-application-name': 'falconx'
-    }
-  }
+      'x-application-name': 'falconx',
+    },
+  },
 })
 
 // Tipos para o usuário
@@ -46,4 +43,4 @@ export interface UserProfile {
   api_key: string
   created_at: string
   updated_at: string
-} 
+}

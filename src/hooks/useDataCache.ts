@@ -55,84 +55,89 @@ export function useDataCache<T>(
   // Só executar se tiver userId válido
   const shouldExecute = !!userId && userId.trim() !== '' && finalConfig.enabled !== false
 
-  const isCacheValid = useCallback((cacheItem: CacheItem<T>) => {
-    return (
-      Date.now() - cacheItem.timestamp < finalConfig.duration &&
-      cacheItem.userId === userId // Verificar se o cache pertence ao usuário atual
-    )
-  }, [finalConfig.duration, userId])
+  const isCacheValid = useCallback(
+    (cacheItem: CacheItem<T>) => {
+      return (
+        Date.now() - cacheItem.timestamp < finalConfig.duration && cacheItem.userId === userId // Verificar se o cache pertence ao usuário atual
+      )
+    },
+    [finalConfig.duration, userId]
+  )
 
-  const fetchData = useCallback(async (forceRefresh = false) => {
-    if (!shouldExecute) {
-      if (mountedRef.current) {
-        setLoading(false)
-        setData(null)
-        setError(null)
+  const fetchData = useCallback(
+    async (forceRefresh = false) => {
+      if (!shouldExecute) {
+        if (mountedRef.current) {
+          setLoading(false)
+          setData(null)
+          setError(null)
+        }
+        return null
       }
-      return null
-    }
 
-    if (!mountedRef.current) return null
-
-    setError(null)
-    
-    // Usar cache isolado do usuário
-    const userCache = getUserCache(userId)
-    const cacheKey = key
-    const cached = userCache.get(cacheKey) as CacheItem<T> | undefined
-    
-    // Verificar cache primeiro
-    if (!forceRefresh && cached && isCacheValid(cached)) {
-      if (mountedRef.current) {
-        setData(cached.data)
-        setLoading(false)
-      }
-      return cached.data
-    }
-
-    // Se existe cache mas está expirado, mostrar dados antigos enquanto carrega novos
-    if (cached && !forceRefresh && mountedRef.current) {
-      setData(cached.data)
-    }
-
-    if (mountedRef.current) {
-      setLoading(true)
-    }
-
-    try {
-      const result = await queryFn()
-      
       if (!mountedRef.current) return null
 
-      // Atualizar cache com userId para segurança
-      userCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-        userId: userId
-      })
+      setError(null)
 
-      setData(result)
-      return result
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      
-      if (mountedRef.current) {
-        setError(errorMessage)
-        console.error(`Erro ao carregar dados para ${key}:`, error)
-        
-        // Se tem cache antigo do mesmo usuário, usar ele
-        if (cached && cached.userId === userId) {
+      // Usar cache isolado do usuário
+      const userCache = getUserCache(userId)
+      const cacheKey = key
+      const cached = userCache.get(cacheKey) as CacheItem<T> | undefined
+
+      // Verificar cache primeiro
+      if (!forceRefresh && cached && isCacheValid(cached)) {
+        if (mountedRef.current) {
           setData(cached.data)
+          setLoading(false)
+        }
+        return cached.data
+      }
+
+      // Se existe cache mas está expirado, mostrar dados antigos enquanto carrega novos
+      if (cached && !forceRefresh && mountedRef.current) {
+        setData(cached.data)
+      }
+
+      if (mountedRef.current) {
+        setLoading(true)
+      }
+
+      try {
+        const result = await queryFn()
+
+        if (!mountedRef.current) return null
+
+        // Atualizar cache com userId para segurança
+        userCache.set(cacheKey, {
+          data: result,
+          timestamp: Date.now(),
+          userId: userId,
+        })
+
+        setData(result)
+        return result
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+
+        if (mountedRef.current) {
+          setError(errorMessage)
+          console.error(`Erro ao carregar dados para ${key}:`, error)
+
+          // Se tem cache antigo do mesmo usuário, usar ele
+          if (cached && cached.userId === userId) {
+            setData(cached.data)
+          }
+        }
+
+        throw error
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false)
         }
       }
-      
-      throw error
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [key, queryFn, isCacheValid, shouldExecute, userId])
+    },
+    [key, queryFn, isCacheValid, shouldExecute, userId]
+  )
 
   const refresh = useCallback(() => {
     return fetchData(true)
@@ -147,7 +152,7 @@ export function useDataCache<T>(
 
   useEffect(() => {
     mountedRef.current = true
-    
+
     if (shouldExecute) {
       fetchData()
     } else {
@@ -167,9 +172,12 @@ export function useDataCache<T>(
     error,
     refresh,
     invalidate,
-    isStale: data && userId ? 
-      !isCacheValid((getUserCache(userId).get(key) as CacheItem<T>) || { data: data, timestamp: 0, userId }) : 
-      false
+    isStale:
+      data && userId
+        ? !isCacheValid(
+            (getUserCache(userId).get(key) as CacheItem<T>) || { data: data, timestamp: 0, userId }
+          )
+        : false,
   }
 }
 
@@ -186,28 +194,25 @@ export function useDashboardStats(userId: string) {
         { count: allowedDomainsCount },
         { data: uniqueClones },
         { count: totalDetectionsCount },
-        { count: activeActionsCount }
+        { count: activeActionsCount },
       ] = await Promise.all([
         supabase
           .from('allowed_domains')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId),
-        
-        supabase
-          .from('detected_clones')
-          .select('original_domain')
-          .eq('user_id', userId),
-        
+
+        supabase.from('detected_clones').select('original_domain').eq('user_id', userId),
+
         supabase
           .from('detected_clones')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId),
-        
+
         supabase
           .from('clone_actions')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId)
-          .eq('is_active', true)
+          .eq('is_active', true),
       ])
 
       const uniqueClonesCount = new Set(uniqueClones?.map(c => c.original_domain) || []).size
@@ -216,11 +221,11 @@ export function useDashboardStats(userId: string) {
         allowedDomains: allowedDomainsCount || 0,
         detectedClones: uniqueClonesCount || 0,
         totalDetections: totalDetectionsCount || 0,
-        activeActions: activeActionsCount || 0
+        activeActions: activeActionsCount || 0,
       }
     },
     userId,
-    { 
+    {
       duration: 20000, // 20 segundos para estatísticas
     }
   )
@@ -247,11 +252,11 @@ export function useRecentDetections(userId: string) {
         detected_at: detection.last_seen,
         action_taken: 'Clone Detectado',
         user_agent: detection.user_agent || 'N/A',
-        ip_address: detection.ip_address || 'N/A'
+        ip_address: detection.ip_address || 'N/A',
       }))
     },
     userId,
-    { 
+    {
       duration: 15000, // 15 segundos para detecções recentes
     }
   )
@@ -276,8 +281,8 @@ export function useAllowedDomains(userId: string) {
       return data || []
     },
     userId,
-    { 
+    {
       duration: 25000, // 25 segundos para domínios permitidos
     }
   )
-} 
+}
