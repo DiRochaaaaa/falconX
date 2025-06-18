@@ -11,7 +11,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 - Testes automatizados (Jest/Vitest)
 - Pipeline CI/CD
-- Métricas de performance em produção
+- WebSockets para atualizações realmente em tempo real
+
+### Otimizações de Performance - 2025-01-18
+
+#### ⚡ Sistema de Detecção Otimizado
+
+- **BREAKING**: Redução de 75% no número de requisições (120/h → 30/h por usuário)
+- **Cache Inteligente** com durações específicas por tipo de dado:
+  - Dashboard stats: 1 minuto (dados que mudam pouco)
+  - Detecções recentes: 30 segundos (dados críticos)
+  - Domínios permitidos: 5 minutos (dados estáticos)
+- **Rate Limiting** na API de detecção (10 req/min por usuário+IP)
+- **Polling Otimizado**: Reduzido de 30s para 2min + detecção baseada em eventos
+- **Prevenção de Múltiplos Refreshes** simultâneos
+- **Detecção por Eventos**: Resposta imediata em focus/visibility change
 
 ## [1.0.0] - 2025-01-18
 

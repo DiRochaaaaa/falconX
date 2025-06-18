@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 
+// Rate limiting simples em memória
+interface RateLimitEntry {
+  count: number
+  resetTime: number
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>()
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 10 // máximo 10 requisições por minuto por IP/userId
+
+function checkRateLimit(identifier: string): { allowed: boolean; resetTime?: number } {
+  const now = Date.now()
+  const entry = rateLimitMap.get(identifier)
+
+  if (!entry || now > entry.resetTime) {
+    // Primeira requisição ou janela expirou
+    rateLimitMap.set(identifier, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW,
+    })
+    return { allowed: true }
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, resetTime: entry.resetTime }
+  }
+
+  // Incrementar contador
+  entry.count++
+  return { allowed: true }
+}
+
 // Cliente Supabase com service role para bypass RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,6 +88,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'userId e currentDomain são obrigatórios' },
         { status: 400, headers: corsHeaders }
+      )
+    }
+
+    // Rate limiting baseado em userId + IP
+    const clientIP =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitIdentifier = `${userId}:${clientIP}`
+    const rateLimit = checkRateLimit(rateLimitIdentifier)
+
+    if (!rateLimit.allowed) {
+      const retryAfter = Math.ceil((rateLimit.resetTime! - Date.now()) / 1000)
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          retryAfter,
+          message: 'Muitas requisições. Tente novamente em alguns segundos.',
+        },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Retry-After': retryAfter.toString(),
+            'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimit.resetTime!).toISOString(),
+          },
+        }
       )
     }
 

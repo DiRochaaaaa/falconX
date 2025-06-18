@@ -14,8 +14,15 @@ interface CacheConfig {
   enabled?: boolean // se deve executar a query
 }
 
+// Configurações de cache otimizadas por tipo de dado
+const cacheConfigs = {
+  'dashboard-stats': { duration: 60000 }, // 1 minuto - dados que mudam pouco
+  'recent-detections': { duration: 30000 }, // 30 segundos - dados críticos
+  'allowed-domains': { duration: 300000 }, // 5 minutos - dados estáticos
+}
+
 const defaultConfig: CacheConfig = {
-  duration: 30000, // 30 segundos
+  duration: 60000, // 1 minuto por padrão
 }
 
 // Cache isolado por usuário para evitar vazamento de dados
@@ -49,8 +56,13 @@ export function useDataCache<T>(
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const finalConfig = { ...defaultConfig, ...config }
+
+  // Usar configuração específica se disponível, senão usar padrão
+  const specificConfig = cacheConfigs[key as keyof typeof cacheConfigs] || defaultConfig
+  const finalConfig = { ...specificConfig, ...config }
+
   const mountedRef = useRef(true)
+  const refreshingRef = useRef(false) // Prevenir múltiplos refreshes
 
   // Só executar se tiver userId válido
   const shouldExecute = !!userId && userId.trim() !== '' && finalConfig.enabled !== false
@@ -139,8 +151,16 @@ export function useDataCache<T>(
     [key, queryFn, isCacheValid, shouldExecute, userId]
   )
 
-  const refresh = useCallback(() => {
-    return fetchData(true)
+  const refresh = useCallback(async () => {
+    // Prevenir múltiplos refreshes simultâneos
+    if (refreshingRef.current) return null
+
+    refreshingRef.current = true
+    try {
+      return await fetchData(true)
+    } finally {
+      refreshingRef.current = false
+    }
   }, [fetchData])
 
   const invalidate = useCallback(() => {

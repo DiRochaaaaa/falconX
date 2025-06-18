@@ -478,8 +478,22 @@ function ScriptsSection({
             });
           }
           
+          // Detecção inicial
           detectClone();
-          setInterval(detectClone, 30000);
+          
+          // Polling otimizado - reduzido para 2 minutos
+          setInterval(detectClone, 120000);
+          
+          // Detecção baseada em eventos para melhor responsividade
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+              detectClone();
+            }
+          });
+          
+          window.addEventListener('focus', () => {
+            detectClone();
+          });
         })();
         </script>
       `.trim()

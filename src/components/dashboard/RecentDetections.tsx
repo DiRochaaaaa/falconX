@@ -92,9 +92,10 @@ export default function RecentDetections({ detections, loading }: RecentDetectio
         <h2 className="text-xl font-semibold text-white">Detecções Recentes</h2>
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-red-400"></div>
-            <span className="text-xs text-gray-400">Tempo real</span>
+            <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
+            <span className="text-xs text-gray-400">Atualização inteligente</span>
           </div>
+          <div className="text-xs text-gray-500">(2min + eventos)</div>
         </div>
       </div>
 
