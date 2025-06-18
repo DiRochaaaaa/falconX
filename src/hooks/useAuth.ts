@@ -5,6 +5,17 @@ import { User } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '../lib/supabase'
 import { clearUserCache } from './useDataCache'
 
+/**
+ * Hook de autenticação com correção para deadlocks do Supabase
+ *
+ * CORREÇÃO APLICADA: Fix para loading infinito quando volta para aba
+ * - Removido async do callback onAuthStateChange
+ * - Adicionado setTimeout para evitar deadlocks conforme documentação oficial
+ * - Adicionado timeout de segurança na inicialização
+ *
+ * Referência: https://supabase.com/docs/guides/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0
+ */
+
 interface AuthState {
   user: User | null
   profile: UserProfile | null
@@ -83,11 +94,28 @@ export function useAuth() {
     initializingRef.current = true
     updateAuthState({ loading: true, error: null })
 
+    // Timeout de segurança para evitar loading infinito
+    const timeoutId = setTimeout(() => {
+      if (initializingRef.current && mountedRef.current) {
+        console.warn('Auth initialization timeout - assuming not authenticated')
+        updateAuthState({
+          user: null,
+          profile: null,
+          loading: false,
+          initialized: true,
+          error: null,
+        })
+        initializingRef.current = false
+      }
+    }, 10000) // 10 segundos timeout
+
     try {
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession()
+
+      clearTimeout(timeoutId)
 
       if (!mountedRef.current) return
 
@@ -107,7 +135,13 @@ export function useAuth() {
       updateAuthState({ user, error: null })
 
       if (user) {
-        await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+        try {
+          await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+        } catch (profileError) {
+          console.error('Erro ao carregar perfil durante inicialização:', profileError)
+          // Continua mesmo se falhar ao carregar perfil
+          updateAuthState({ error: null })
+        }
       } else {
         updateAuthState({ profile: null })
       }
@@ -117,6 +151,7 @@ export function useAuth() {
         initialized: true,
       })
     } catch (error) {
+      clearTimeout(timeoutId)
       console.error('Erro na inicialização da autenticação:', error)
       updateAuthState({
         user: null,
@@ -145,42 +180,57 @@ export function useAuth() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mountedRef.current || initializingRef.current) return
 
       // Auth state change event
-
       const user = session?.user ?? null
       const previousUserId = authState.user?.id
 
       // Atualizar estado do usuário imediatamente
       updateAuthState({ user, error: null })
 
-      // Lidar com eventos específicos
-      if (event === 'SIGNED_IN' && user) {
-        updateAuthState({ loading: true })
-        await loadProfile(user.id, user.email, user.user_metadata?.full_name)
-        updateAuthState({ loading: false })
-      } else if (event === 'SIGNED_OUT') {
-        updateAuthState({ profile: null, loading: false })
-        // Limpar cache do usuário anterior ao fazer logout
-        if (previousUserId) {
-          clearUserCache(previousUserId)
-        }
-      } else if (event === 'TOKEN_REFRESHED' && user) {
-        // Manter perfil existente, só atualizar user se necessário
-        if (!authState.profile) {
-          updateAuthState({ loading: true })
-          await loadProfile(user.id, user.email, user.user_metadata?.full_name)
-          updateAuthState({ loading: false })
-        }
-      }
+      // Usar setTimeout para evitar deadlocks conforme documentação do Supabase
+      // https://supabase.com/docs/guides/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0
+      setTimeout(async () => {
+        if (!mountedRef.current) return
 
-      // Garantir que loading seja desabilitado e initialized seja true
-      updateAuthState({
-        loading: false,
-        initialized: true,
-      })
+        // Lidar com eventos específicos
+        if (event === 'SIGNED_IN' && user) {
+          updateAuthState({ loading: true })
+          try {
+            await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+          } catch (error) {
+            console.error('Erro ao carregar perfil no SIGNED_IN:', error)
+            updateAuthState({ error: 'Erro ao carregar perfil' })
+          }
+          updateAuthState({ loading: false })
+        } else if (event === 'SIGNED_OUT') {
+          updateAuthState({ profile: null, loading: false })
+          // Limpar cache do usuário anterior ao fazer logout
+          if (previousUserId) {
+            clearUserCache(previousUserId)
+          }
+        } else if (event === 'TOKEN_REFRESHED' && user) {
+          // Manter perfil existente, só atualizar user se necessário
+          if (!authState.profile) {
+            updateAuthState({ loading: true })
+            try {
+              await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+            } catch (error) {
+              console.error('Erro ao carregar perfil no TOKEN_REFRESHED:', error)
+              updateAuthState({ error: 'Erro ao carregar perfil' })
+            }
+            updateAuthState({ loading: false })
+          }
+        }
+
+        // Garantir que loading seja desabilitado e initialized seja true
+        updateAuthState({
+          loading: false,
+          initialized: true,
+        })
+      }, 0) // Executa após o callback terminar, evitando deadlocks
     })
 
     return () => {
