@@ -64,7 +64,7 @@ export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerC
         if (!groups[trigger.category]) {
           groups[trigger.category] = []
         }
-        groups[trigger.category].push(trigger)
+        groups[trigger.category]!.push(trigger)
         return groups
       },
       {} as Record<string, TriggerParam[]>
