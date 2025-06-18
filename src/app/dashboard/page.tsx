@@ -5,7 +5,7 @@ import { useDashboardStats, useRecentDetections, useAllowedDomains } from '@/hoo
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
-import { useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 // Lazy load components for better performance
@@ -448,8 +448,9 @@ function ScriptsSection({
 }) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedScript, setGeneratedScript] = useState('')
+  const [copySuccess, setCopySuccess] = useState(false)
 
-  const generateScript = async () => {
+  const generateScript = useCallback(async () => {
     if (!user?.id) return
 
     setIsGenerating(true)
@@ -502,16 +503,32 @@ function ScriptsSection({
     } finally {
       setIsGenerating(false)
     }
-  }
+  }, [user?.id])
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(generatedScript)
-      // Show success toast
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
     } catch {
-      // Erro ao copiar para clipboard
+      // Fallback para navegadores sem clipboard API
+      const textArea = document.createElement('textarea')
+      textArea.value = generatedScript
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
     }
   }
+
+  // Gerar script automaticamente quando o componente carrega
+  useEffect(() => {
+    if (user?.id && !generatedScript && !isGenerating) {
+      generateScript()
+    }
+  }, [user?.id, generatedScript, isGenerating, generateScript])
 
   return (
     <div className="space-y-8">
@@ -521,36 +538,55 @@ function ScriptsSection({
       </div>
 
       <div className="glass rounded-xl p-6">
-        <div className="py-8 text-center">
-          <Icons.Code className="mx-auto mb-4 h-16 w-16 text-green-400" />
-          <h3 className="mb-2 text-xl font-semibold text-white">Script Global</h3>
-          <p className="mb-6 text-gray-400">
-            Gere um script único que funciona em todos os seus domínios
-          </p>
-
-          <button onClick={generateScript} disabled={isGenerating} className="btn btn-primary">
-            {isGenerating ? (
-              <>
-                <div className="loading-spinner mr-2 h-4 w-4"></div>
-                Gerando Script...
-              </>
-            ) : (
-              <>
-                <Icons.Code className="mr-2 h-4 w-4" />
-                Gerar Script
-              </>
-            )}
-          </button>
-        </div>
+        {isGenerating ? (
+          <div className="py-8 text-center">
+            <div className="loading-spinner mx-auto mb-4 h-16 w-16 text-green-400"></div>
+            <h3 className="mb-2 text-xl font-semibold text-white">Gerando seu script...</h3>
+            <p className="text-gray-400">Criando script personalizado para sua proteção</p>
+          </div>
+        ) : !generatedScript ? (
+          <div className="py-8 text-center">
+            <Icons.Code className="mx-auto mb-4 h-16 w-16 text-green-400" />
+            <h3 className="mb-2 text-xl font-semibold text-white">Script Global</h3>
+            <p className="mb-6 text-gray-400">
+              Script único que funciona em todos os seus domínios
+            </p>
+            <button onClick={generateScript} className="btn btn-primary">
+              <Icons.Code className="mr-2 h-4 w-4" />
+              Gerar Novo Script
+            </button>
+          </div>
+        ) : null}
 
         {generatedScript && (
-          <div className="mt-8 space-y-4">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-medium text-white">Script Gerado</h4>
-              <button onClick={copyToClipboard} className="btn-ghost text-sm">
-                <Icons.Copy className="mr-1 h-4 w-4" />
-                Copiar
-              </button>
+              <div>
+                <h4 className="text-lg font-medium text-white">✅ Script Pronto para Uso</h4>
+                <p className="text-sm text-gray-400">Copie e cole antes do &lt;/body&gt;</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button onClick={generateScript} className="btn-ghost text-sm">
+                  <Icons.RefreshCw className="mr-1 h-4 w-4" />
+                  Regenerar
+                </button>
+                <button
+                  onClick={copyToClipboard}
+                  className={`btn-primary text-sm ${copySuccess ? 'bg-green-600' : ''}`}
+                >
+                  {copySuccess ? (
+                    <>
+                      <Icons.Check className="mr-1 h-4 w-4" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Icons.Copy className="mr-1 h-4 w-4" />
+                      Copiar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-lg bg-gray-900 p-4">
@@ -573,47 +609,292 @@ function ScriptsSection({
 }
 
 // Componente de Ações
-function ActionsSection() {
+interface ActionData {
+  id: number
+  user_id: string
+  action_type: 'redirect' | 'blank_page' | 'custom_message'
+  redirect_url?: string
+  redirect_percentage: number
+  trigger_params: Record<string, boolean>
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+function ActionsSection({ user }: { user: User | null }) {
+  const [actions, setActions] = useState<ActionData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [formData, setFormData] = useState<{
+    action_type: 'redirect' | 'blank_page' | 'custom_message'
+    redirect_url: string
+    redirect_percentage: number
+    trigger_params: Record<string, boolean>
+  }>({
+    action_type: 'redirect',
+    redirect_url: '',
+    redirect_percentage: 100,
+    trigger_params: { fbclid: true, gclid: false, utm_source: false },
+  })
+
+  const loadActions = useCallback(async () => {
+    if (!user?.id) return
+
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('clone_actions')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('clone_id', null)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setActions(data || [])
+    } catch (error) {
+      console.error('Erro ao carregar ações:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user?.id) return
+
+    try {
+      const { error } = await supabase.from('clone_actions').insert({
+        user_id: user.id,
+        action_type: formData.action_type,
+        redirect_url: formData.action_type === 'redirect' ? formData.redirect_url : null,
+        redirect_percentage: formData.redirect_percentage,
+        trigger_params: formData.trigger_params,
+        is_active: true,
+      })
+
+      if (error) throw error
+
+      setShowForm(false)
+      setFormData({
+        action_type: 'redirect',
+        redirect_url: '',
+        redirect_percentage: 100,
+        trigger_params: { fbclid: true, gclid: false, utm_source: false },
+      })
+      loadActions()
+    } catch (error) {
+      console.error('Erro ao criar ação:', error)
+    }
+  }
+
+  const toggleAction = async (actionId: number, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('clone_actions')
+        .update({ is_active: !isActive })
+        .eq('id', actionId)
+
+      if (error) throw error
+      loadActions()
+    } catch (error) {
+      console.error('Erro ao atualizar ação:', error)
+    }
+  }
+
+  const deleteAction = async (actionId: number) => {
+    try {
+      const { error } = await supabase.from('clone_actions').delete().eq('id', actionId)
+
+      if (error) throw error
+      loadActions()
+    } catch (error) {
+      console.error('Erro ao deletar ação:', error)
+    }
+  }
+
+  useEffect(() => {
+    loadActions()
+  }, [loadActions])
+
+  const getActionIcon = (type: string) => {
+    switch (type) {
+      case 'redirect':
+        return <Icons.ArrowRight className="h-5 w-5 text-blue-400" />
+      case 'blank_page':
+        return <Icons.EyeOff className="h-5 w-5 text-red-400" />
+      case 'custom_message':
+        return <Icons.MessageSquare className="h-5 w-5 text-purple-400" />
+      default:
+        return <Icons.Lightning className="h-5 w-5 text-yellow-400" />
+    }
+  }
+
+  const getActionName = (type: string) => {
+    switch (type) {
+      case 'redirect':
+        return 'Redirecionamento'
+      case 'blank_page':
+        return 'Página em Branco'
+      case 'custom_message':
+        return 'Mensagem Custom'
+      default:
+        return type
+    }
+  }
+
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-gradient mb-2 text-2xl font-bold">Ações Configuradas</h2>
-        <p className="text-gray-300">
-          Configure as ações a serem executadas quando clones forem detectados
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-gradient mb-2 text-2xl font-bold">Ações Configuradas</h2>
+          <p className="text-gray-300">
+            Configure as ações a serem executadas quando clones forem detectados
+          </p>
+        </div>
+        <button onClick={() => setShowForm(true)} className="btn btn-primary">
+          <Icons.Plus className="mr-2 h-4 w-4" />
+          Nova Ação
+        </button>
       </div>
 
-      <div className="glass rounded-xl p-6">
-        <div className="py-8 text-center">
-          <Icons.Lightning className="mx-auto mb-4 h-16 w-16 text-yellow-400" />
-          <h3 className="mb-2 text-xl font-semibold text-white">Configurar Ações</h3>
-          <p className="mb-6 text-gray-400">Defina o que acontece quando um clone é detectado</p>
+      {loading ? (
+        <div className="glass rounded-xl p-6">
+          <div className="py-8 text-center">
+            <div className="loading-spinner mx-auto mb-4 h-8 w-8"></div>
+            <p className="text-gray-400">Carregando ações...</p>
+          </div>
+        </div>
+      ) : actions.length === 0 ? (
+        <div className="glass rounded-xl p-6">
+          <div className="py-8 text-center">
+            <Icons.Lightning className="mx-auto mb-4 h-16 w-16 text-yellow-400" />
+            <h3 className="mb-2 text-xl font-semibold text-white">Nenhuma Ação Configurada</h3>
+            <p className="mb-6 text-gray-400">
+              Configure ações para serem executadas quando clones forem detectados
+            </p>
+            <button onClick={() => setShowForm(true)} className="btn btn-primary">
+              Criar Primeira Ação
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {actions.map(action => (
+            <div key={action.id} className="glass rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="rounded-lg bg-gray-800/50 p-3">
+                    {getActionIcon(action.action_type)}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">
+                      {getActionName(action.action_type)}
+                    </h3>
+                    {action.redirect_url && (
+                      <p className="text-sm text-gray-400">→ {action.redirect_url}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      {action.redirect_percentage}% dos visitantes
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => toggleAction(action.id, action.is_active)}
+                    className={`btn-ghost text-sm ${
+                      action.is_active ? 'text-green-400' : 'text-gray-400'
+                    }`}
+                  >
+                    {action.is_active ? 'Ativo' : 'Inativo'}
+                  </button>
+                  <button
+                    onClick={() => deleteAction(action.id)}
+                    className="btn-ghost text-sm text-red-400 hover:bg-red-500/10"
+                  >
+                    <Icons.Trash className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="glass-strong rounded-lg p-4 text-center">
-                <Icons.ArrowRight className="mx-auto mb-2 h-8 w-8 text-blue-400" />
-                <h4 className="mb-1 font-medium text-white">Redirecionamento</h4>
-                <p className="text-sm text-gray-400">Redirecionar tráfego para seu site original</p>
+      {showForm && (
+        <div className="glass rounded-xl p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">Nova Ação</h3>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="btn-ghost text-sm"
+              >
+                <Icons.X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">Tipo de Ação</label>
+                <select
+                  value={formData.action_type}
+                  onChange={e => {
+                    const value = e.target.value as 'redirect' | 'blank_page' | 'custom_message'
+                    setFormData({ ...formData, action_type: value })
+                  }}
+                  className="input-primary w-full"
+                >
+                  <option value="redirect">Redirecionamento</option>
+                  <option value="blank_page">Página em Branco</option>
+                  <option value="custom_message">Mensagem Custom</option>
+                </select>
               </div>
 
-              <div className="glass-strong rounded-lg p-4 text-center">
-                <Icons.EyeOff className="mx-auto mb-2 h-8 w-8 text-red-400" />
-                <h4 className="mb-1 font-medium text-white">Página em Branco</h4>
-                <p className="text-sm text-gray-400">Mostrar página em branco para clones</p>
-              </div>
+              {formData.action_type === 'redirect' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-300">
+                    URL de Redirecionamento
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.redirect_url}
+                    onChange={e => setFormData({ ...formData, redirect_url: e.target.value })}
+                    className="input-primary w-full"
+                    placeholder="https://seusite.com"
+                    required
+                  />
+                </div>
+              )}
 
-              <div className="glass-strong rounded-lg p-4 text-center">
-                <Icons.MessageSquare className="mx-auto mb-2 h-8 w-8 text-purple-400" />
-                <h4 className="mb-1 font-medium text-white">Mensagem Custom</h4>
-                <p className="text-sm text-gray-400">Exibir mensagem personalizada</p>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  Porcentagem de Ação ({formData.redirect_percentage}%)
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={formData.redirect_percentage}
+                  onChange={e =>
+                    setFormData({ ...formData, redirect_percentage: parseInt(e.target.value) })
+                  }
+                  className="w-full"
+                />
               </div>
             </div>
 
-            <button className="btn btn-primary">Configurar Ações</button>
-          </div>
+            <div className="flex justify-end space-x-3">
+              <button type="button" onClick={() => setShowForm(false)} className="btn-ghost">
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Criar Ação
+              </button>
+            </div>
+          </form>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -762,7 +1043,7 @@ export default function Dashboard() {
       case 'scripts':
         return <ScriptsSection user={user} profile={profile} />
       case 'actions':
-        return <ActionsSection />
+        return <ActionsSection user={user} />
       case 'profile':
         return <ProfileSection user={user} profile={profile} />
       case 'settings':

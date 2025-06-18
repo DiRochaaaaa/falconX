@@ -118,11 +118,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Simular verificação de domínios autorizados
-    const authorizedDomains = ['meusite.com', 'meudominio.com.br']
+    // Buscar domínios autorizados do usuário no banco
+    const { data: allowedDomains, error: domainsError } = await supabaseAdmin
+      .from('allowed_domains')
+      .select('domain')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (domainsError) {
+      logger.error('Erro ao buscar domínios autorizados', new Error(domainsError.message))
+      // Em caso de erro, assumir que não é autorizado para não comprometer a segurança
+    }
+
+    const authorizedDomains = allowedDomains?.map(d => d.domain) || []
     const isAuthorized = authorizedDomains.some(
       domain => currentDomain === domain || currentDomain.endsWith('.' + domain)
     )
+
+    logger.info('Verificação de domínios', {
+      currentDomain,
+      authorizedDomains,
+      isAuthorized,
+      userId,
+    })
 
     if (isAuthorized) {
       logger.info('Domínio autorizado', { currentDomain })
@@ -164,12 +182,15 @@ export async function POST(request: NextRequest) {
         cloneId = existingClone.id
         logger.info('Clone atualizado', { cloneId, newCount: existingClone.detection_count + 1 })
       } else {
-        // Novo clone - inserir
+        // Novo clone - inserir (usar primeiro domínio autorizado como original)
+        const originalDomain =
+          authorizedDomains.length > 0 ? authorizedDomains[0] : 'domain-not-configured'
+
         const { data: newClone, error: insertError } = await supabaseAdmin
           .from('detected_clones')
           .insert({
             user_id: userId,
-            original_domain: 'meusite.com',
+            original_domain: originalDomain,
             clone_domain: currentDomain,
             detection_count: 1,
             first_detected: new Date().toISOString(),
@@ -209,10 +230,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const originalDomain =
+        authorizedDomains.length > 0 ? authorizedDomains[0] : 'domain-not-configured'
+
       const response = {
         status: 'clone_detected',
         message: 'Clone detectado e registrado com sucesso',
-        originalDomain: 'meusite.com',
+        originalDomain: originalDomain,
         cloneDomain: currentDomain,
         cloneId: cloneId,
         processingTime: Date.now() - startTime,
@@ -226,10 +250,13 @@ export async function POST(request: NextRequest) {
       )
 
       // Retornar sucesso mesmo com erro de banco para não quebrar o script
+      const originalDomain =
+        authorizedDomains.length > 0 ? authorizedDomains[0] : 'domain-not-configured'
+
       const response = {
         status: 'clone_detected',
         message: 'Clone detectado (erro de banco de dados)',
-        originalDomain: 'meusite.com',
+        originalDomain: originalDomain,
         cloneDomain: currentDomain,
         dbError: dbError instanceof Error ? dbError.message : String(dbError),
         processingTime: Date.now() - startTime,
