@@ -61,6 +61,15 @@ body {
   }
 }
 
+/* Layout utilities */
+.min-w-0 {
+  min-width: 0;
+}
+
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+
 /* Scrollbar customizada */
 ::-webkit-scrollbar {
   width: 8px;

@@ -17,8 +17,9 @@ const QuickActions = lazy(() => import('@/components/dashboard/QuickActions'))
 function LoadingSkeleton({ className = '' }: { className?: string }) {
   return (
     <div className={`animate-pulse ${className}`}>
-      <div className="mb-2 h-4 w-3/4 rounded bg-gray-700"></div>
-      <div className="h-4 w-1/2 rounded bg-gray-700"></div>
+      <div className="mb-4 h-6 w-3/4 rounded-lg bg-gray-700/50"></div>
+      <div className="mb-3 h-4 w-1/2 rounded bg-gray-700/30"></div>
+      <div className="h-4 w-2/3 rounded bg-gray-700/30"></div>
     </div>
   )
 }
@@ -26,13 +27,19 @@ function LoadingSkeleton({ className = '' }: { className?: string }) {
 // Error message component
 function ErrorMessage({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="card border-red-500/20 bg-red-500/5">
+    <div className="card border-red-500/30 bg-red-500/10 backdrop-blur-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Icons.Warning className="h-5 w-5 text-red-400" />
-          <span className="text-red-300">{error}</span>
+          <div className="rounded-full bg-red-500/20 p-2">
+            <Icons.Warning className="h-5 w-5 text-red-400" />
+          </div>
+          <div>
+            <p className="font-medium text-red-300">Erro no carregamento</p>
+            <p className="text-sm text-red-400/80">{error}</p>
+          </div>
         </div>
-        <button onClick={onRetry} className="btn-ghost text-sm">
+        <button onClick={onRetry} className="btn-ghost text-sm hover:bg-red-500/10">
+          <Icons.RefreshCw className="mr-2 h-4 w-4" />
           Tentar Novamente
         </button>
       </div>
@@ -88,29 +95,103 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
   const planLimits = getPlanLimits()
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-gradient mb-2 text-3xl font-bold">Bem-vindo ao Falcon X</h1>
-        <p className="text-gray-300">
-          Monitore e proteja seus funis de vendas contra clonagem em tempo real
-        </p>
+    <div className="bg-gradient-main min-h-screen">
+      {/* Header Section */}
+      <div className="mb-12">
+        <div className="mb-6">
+          <h1 className="text-gradient mb-3 text-4xl font-bold tracking-tight">
+            Bem-vindo ao Falcon X
+          </h1>
+          <p className="text-lg text-gray-300">
+            Monitore e proteja seus funis de vendas contra clonagem em tempo real
+          </p>
+        </div>
+
+        {/* Plan Info Badge */}
+        <div className="bg-gradient-green/10 inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-green-400 ring-1 ring-green-500/20">
+          <Icons.Crown className="mr-2 h-4 w-4" />
+          Plano {profile?.plan_type?.toUpperCase() || 'FREE'}
+        </div>
       </div>
 
-      {statsError && <ErrorMessage error={statsError} onRetry={refreshStats} />}
+      {/* Stats Section */}
+      <div className="mb-12">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-white">Estatísticas</h2>
+          <p className="text-gray-400">Visão geral da sua proteção</p>
+        </div>
 
-      <Suspense fallback={<LoadingSkeleton className="h-32" />}>
-        <StatsCards stats={stats} loading={statsLoading} planLimits={planLimits} />
-      </Suspense>
+        {statsError && (
+          <div className="mb-6">
+            <ErrorMessage error={statsError} onRetry={refreshStats} />
+          </div>
+        )}
 
-      <Suspense fallback={<LoadingSkeleton className="h-48" />}>
-        <QuickActions />
-      </Suspense>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Suspense
+            fallback={
+              <>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="card">
+                    <LoadingSkeleton />
+                  </div>
+                ))}
+              </>
+            }
+          >
+            <StatsCards stats={stats} loading={statsLoading} planLimits={planLimits} />
+          </Suspense>
+        </div>
+      </div>
 
-      {detectionsError && <ErrorMessage error={detectionsError} onRetry={refreshDetections} />}
+      {/* Quick Actions Section */}
+      <div className="mb-12">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-white">Ações Rápidas</h2>
+          <p className="text-gray-400">Gerencie sua proteção rapidamente</p>
+        </div>
 
-      <Suspense fallback={<LoadingSkeleton className="h-64" />}>
-        <RecentDetections detections={detections || []} loading={detectionsLoading} />
-      </Suspense>
+        <Suspense
+          fallback={
+            <div className="card">
+              <LoadingSkeleton className="h-32" />
+            </div>
+          }
+        >
+          <QuickActions />
+        </Suspense>
+      </div>
+
+      {/* Recent Detections Section */}
+      <div className="mb-12">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-white">Detecções Recentes</h2>
+            <p className="text-gray-400">Últimas atividades de clonagem detectadas</p>
+          </div>
+          {detections && detections.length > 0 && (
+            <button onClick={refreshDetections} className="btn-ghost" disabled={detectionsLoading}>
+              <Icons.RefreshCw className={`h-4 w-4 ${detectionsLoading ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+        </div>
+
+        {detectionsError && (
+          <div className="mb-6">
+            <ErrorMessage error={detectionsError} onRetry={refreshDetections} />
+          </div>
+        )}
+
+        <Suspense
+          fallback={
+            <div className="card">
+              <LoadingSkeleton className="h-64" />
+            </div>
+          }
+        >
+          <RecentDetections detections={detections || []} loading={detectionsLoading} />
+        </Suspense>
+      </div>
     </div>
   )
 }
