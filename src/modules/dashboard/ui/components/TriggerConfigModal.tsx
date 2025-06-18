@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Icons } from '@/components/Icons'
-import { TriggerParam, DEFAULT_TRIGGER_PARAMS } from '../../domain'
-import { TriggerService } from '../../infrastructure'
+import { TriggerService } from '../../infrastructure/services/trigger-service'
+import { TriggerParam, DEFAULT_TRIGGER_PARAMS } from '../../domain/types'
 
 interface TriggerConfigModalProps {
   isOpen: boolean
@@ -12,7 +12,6 @@ interface TriggerConfigModalProps {
   onSave?: () => void
 }
 
-// Componente de toast simples para o modal
 function SimpleToast({
   message,
   type,
@@ -23,9 +22,7 @@ function SimpleToast({
   onClose: () => void
 }) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose()
-    }, 3000)
+    const timer = setTimeout(onClose, 3000)
     return () => clearTimeout(timer)
   }, [onClose])
 
@@ -40,7 +37,7 @@ function SimpleToast({
       >
         <div className="flex items-center justify-between">
           <span className="text-sm">{message}</span>
-          <button onClick={onClose} className="ml-2 text-gray-400 hover:text-white">
+          <button onClick={onClose} className="ml-2 text-current opacity-70 hover:opacity-100">
             <Icons.X className="h-4 w-4" />
           </button>
         </div>
@@ -50,48 +47,13 @@ function SimpleToast({
 }
 
 export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerConfigModalProps) {
-  const [triggerParams, setTriggerParams] = useState<TriggerParam[]>(DEFAULT_TRIGGER_PARAMS)
+  const [triggerParams, setTriggerParams] = useState<TriggerParam[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const triggerService = useMemo(() => new TriggerService(), [])
-
-  // Agrupar triggers por categoria
-  const groupedTriggers = useMemo(() => {
-    return triggerParams.reduce(
-      (groups, trigger) => {
-        if (!groups[trigger.category]) {
-          groups[trigger.category] = []
-        }
-        groups[trigger.category]!.push(trigger)
-        return groups
-      },
-      {} as Record<string, TriggerParam[]>
-    )
-  }, [triggerParams])
-
-  const categoryLabels = {
-    facebook: 'Facebook/Meta Ads',
-    google: 'Google Ads',
-    utm: 'UTM Parameters',
-    tiktok: 'TikTok Ads',
-    twitter: 'Twitter/X Ads',
-    linkedin: 'LinkedIn Ads',
-    youtube: 'YouTube Ads',
-    other: 'Outros',
-  }
-
-  const categoryColors = {
-    facebook: 'from-blue-500 to-blue-600',
-    google: 'from-red-500 to-red-600',
-    utm: 'from-green-500 to-green-600',
-    tiktok: 'from-pink-500 to-pink-600',
-    twitter: 'from-sky-500 to-sky-600',
-    linkedin: 'from-blue-600 to-blue-700',
-    youtube: 'from-red-600 to-red-700',
-    other: 'from-gray-500 to-gray-600',
-  }
 
   const loadTriggerConfig = useCallback(async () => {
     setLoading(true)
@@ -159,6 +121,14 @@ export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerC
     }
   }
 
+  // Filtrar triggers baseado na busca
+  const filteredTriggers = triggerParams.filter(
+    trigger =>
+      trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trigger.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trigger.platform.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   const enabledCount = triggerParams.filter(t => t.enabled).length
 
   if (!isOpen) return null
@@ -166,13 +136,13 @@ export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerC
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="glass relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-xl">
+        <div className="glass relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-xl">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 p-6">
             <div>
               <h2 className="text-2xl font-bold text-white">Configurar Triggers</h2>
               <p className="text-sm text-gray-400">
-                Configure quais parâmetros de URL devem ativar as ações ({enabledCount} ativos)
+                {enabledCount} de {triggerParams.length} triggers ativos
               </p>
             </div>
             <button onClick={onClose} className="btn-ghost p-2" disabled={saving}>
@@ -180,68 +150,77 @@ export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerC
             </button>
           </div>
 
+          {/* Search Bar */}
+          <div className="border-b border-white/10 p-4">
+            <div className="relative">
+              <Icons.Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar triggers..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
           {/* Content */}
-          <div className="max-h-[60vh] overflow-y-auto p-6">
+          <div className="max-h-[50vh] overflow-y-auto p-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
               </div>
             ) : (
-              <div className="space-y-6">
-                {Object.entries(groupedTriggers).map(([category, triggers]) => (
-                  <div key={category} className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`h-3 w-3 rounded-full bg-gradient-to-r ${categoryColors[category as keyof typeof categoryColors] || 'from-gray-500 to-gray-600'}`}
-                      ></div>
-                      <h3 className="text-lg font-semibold text-white">
-                        {categoryLabels[category as keyof typeof categoryLabels] || 'Outros'}
-                      </h3>
-                      <span className="text-sm text-gray-400">
-                        ({triggers.filter(t => t.enabled).length}/{triggers.length} ativos)
-                      </span>
+              <div className="space-y-3">
+                {filteredTriggers.map(trigger => (
+                  <div
+                    key={trigger.key}
+                    className={`flex items-center justify-between rounded-lg border p-4 transition-all hover:bg-white/5 ${
+                      trigger.enabled
+                        ? 'border-green-500/30 bg-green-500/5'
+                        : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <code className="rounded bg-black/30 px-2 py-1 text-sm text-green-400">
+                          {trigger.key}
+                        </code>
+                        <span className="rounded bg-blue-500/20 px-2 py-1 text-xs text-blue-300">
+                          {trigger.platform}
+                        </span>
+                        {trigger.enabled && (
+                          <span className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-300">
+                            Ativo
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="mt-2 font-medium text-white">{trigger.name}</h4>
+                      <p className="text-sm text-gray-400">{trigger.description}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      {triggers.map(trigger => (
-                        <div
-                          key={trigger.key}
-                          className={`rounded-lg border p-4 transition-all ${
-                            trigger.enabled
-                              ? 'border-green-500/30 bg-green-500/5'
-                              : 'border-white/10 bg-white/5'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <code className="rounded bg-black/30 px-2 py-1 text-sm text-green-400">
-                                  {trigger.key}
-                                </code>
-                                <span className="text-xs text-gray-500">{trigger.platform}</span>
-                              </div>
-                              <h4 className="mt-2 font-medium text-white">{trigger.name}</h4>
-                              <p className="text-sm text-gray-400">{trigger.description}</p>
-                            </div>
-                            <button
-                              onClick={() => handleToggleTrigger(trigger.key)}
-                              className={`ml-4 flex h-6 w-11 items-center rounded-full transition-colors ${
-                                trigger.enabled ? 'bg-green-500' : 'bg-gray-600'
-                              }`}
-                              disabled={saving}
-                            >
-                              <div
-                                className={`h-4 w-4 rounded-full bg-white transition-transform ${
-                                  trigger.enabled ? 'translate-x-6' : 'translate-x-1'
-                                }`}
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => handleToggleTrigger(trigger.key)}
+                      className={`ml-4 flex h-6 w-11 items-center rounded-full transition-colors ${
+                        trigger.enabled ? 'bg-green-500' : 'bg-gray-600'
+                      }`}
+                      disabled={saving}
+                    >
+                      <div
+                        className={`h-4 w-4 rounded-full bg-white transition-transform ${
+                          trigger.enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 ))}
+
+                {filteredTriggers.length === 0 && (
+                  <div className="py-12 text-center">
+                    <Icons.Search className="mx-auto h-12 w-12 text-gray-500" />
+                    <p className="mt-4 text-gray-400">Nenhum trigger encontrado</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -270,7 +249,7 @@ export function TriggerConfigModal({ isOpen, onClose, userId, onSave }: TriggerC
                 ) : (
                   <>
                     <Icons.Save className="mr-2 h-4 w-4" />
-                    Salvar Configuração
+                    Salvar
                   </>
                 )}
               </button>
