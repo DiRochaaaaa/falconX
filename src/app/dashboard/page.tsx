@@ -189,7 +189,7 @@ export default function Dashboard() {
           </Suspense>
         )
       case 'actions':
-        return <ActionsSection user={user} />
+        return user ? <ActionsSection user={user} /> : <LoadingSkeleton className="h-96" />
       case 'profile':
         return (
           <Suspense fallback={<LoadingSkeleton className="h-96" />}>

@@ -1,14 +1,21 @@
 import { supabase } from '@/lib/supabase'
 import { ActionData } from '../../domain'
+import { TriggerService } from './trigger-service'
 
 export interface CreateActionRequest {
   action_type: 'redirect_traffic' | 'blank_page' | 'custom_message'
   redirect_url: string
   redirect_percentage: number
-  trigger_params: Record<string, boolean>
+  trigger_params?: Record<string, boolean> // Opcional - usa configuração global se não fornecido
 }
 
 export class ActionService {
+  private triggerService: TriggerService
+
+  constructor() {
+    this.triggerService = new TriggerService()
+  }
+
   async loadActions(userId: string): Promise<ActionData[]> {
     try {
       const { data, error } = await supabase
@@ -18,8 +25,11 @@ export class ActionService {
         .is('clone_id', null)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      return data || []
+      if (error) {
+        throw error
+      }
+
+      return (data as ActionData[]) || []
     } catch (error) {
       console.error('Erro ao carregar ações:', error)
       return []
@@ -28,13 +38,19 @@ export class ActionService {
 
   async createAction(userId: string, actionData: CreateActionRequest): Promise<{ error?: string }> {
     try {
+      // Se não foram fornecidos triggers específicos, usa configuração global do usuário
+      let triggerParams = actionData.trigger_params
+      if (!triggerParams) {
+        triggerParams = await this.triggerService.getActiveTriggers(userId)
+      }
+
       const { error } = await supabase.from('clone_actions').insert({
         user_id: userId,
         action_type: actionData.action_type,
         redirect_url:
           actionData.action_type === 'redirect_traffic' ? actionData.redirect_url : null,
         redirect_percentage: actionData.redirect_percentage,
-        trigger_params: actionData.trigger_params,
+        trigger_params: triggerParams,
         is_active: true,
       })
 
@@ -49,11 +65,17 @@ export class ActionService {
     }
   }
 
-  async toggleAction(actionId: number, isActive: boolean): Promise<{ error?: string }> {
+  async updateAction(
+    actionId: number,
+    updates: Partial<CreateActionRequest>
+  ): Promise<{ error?: string }> {
     try {
       const { error } = await supabase
         .from('clone_actions')
-        .update({ is_active: !isActive })
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', actionId)
 
       if (error) {
@@ -64,6 +86,24 @@ export class ActionService {
     } catch (error) {
       console.error('Erro ao atualizar ação:', error)
       return { error: 'Erro ao atualizar ação' }
+    }
+  }
+
+  async toggleAction(actionId: number, isActive: boolean): Promise<{ error?: string }> {
+    try {
+      const { error } = await supabase
+        .from('clone_actions')
+        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+        .eq('id', actionId)
+
+      if (error) {
+        return { error: 'Erro ao atualizar status da ação' }
+      }
+
+      return {}
+    } catch (error) {
+      console.error('Erro ao atualizar status da ação:', error)
+      return { error: 'Erro ao atualizar status da ação' }
     }
   }
 
