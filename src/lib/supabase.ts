@@ -5,17 +5,32 @@ import { Database } from './types/database'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl) {
-  console.error('❌ NEXT_PUBLIC_SUPABASE_URL não está definida no .env.local')
+// Verificação rigorosa em desenvolvimento
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missingVars = []
+  if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+  if (!supabaseAnonKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+
+  throw new Error(`❌ Configuração do Supabase incompleta!
+
+Certifique-se de que as seguintes variáveis estão definidas:
+${missingVars.map(v => `- ${v}`).join('\n')}
+
+🔧 COMO RESOLVER:
+1. Crie o arquivo .env.local na raiz do projeto
+2. Copie o conteúdo de env.example
+3. Configure suas credenciais do Supabase
+4. Reinicie o servidor (npm run dev)
+
+📁 Estrutura correta:
+falconX/
+├── .env.local ← Deve estar aqui!
+├── env.example
+└── src/...`)
 }
 
-if (!supabaseAnonKey) {
-  console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY não está definida no .env.local')
-}
-
-// Usar valores fallback apenas para build (não funcionais)
-const finalUrl = supabaseUrl || 'https://placeholder.supabase.co'
-const finalKey = supabaseAnonKey || 'placeholder-key'
+const finalUrl = supabaseUrl
+const finalKey = supabaseAnonKey
 
 // Configuração para funcionar SEM confirmação de email
 export const supabase = createClient<Database>(finalUrl, finalKey, {
