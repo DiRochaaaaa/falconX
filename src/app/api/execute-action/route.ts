@@ -36,10 +36,11 @@ export async function POST(request: NextRequest) {
       cloneDomain: string
       userAgent?: string
       referrer?: string
+      currentUrl?: string
     }
 
     const body: RequestBody = await request.json()
-    const { userId, cloneDomain, referrer } = body
+    const { userId, cloneDomain, referrer, currentUrl } = body
 
     if (!userId || !cloneDomain) {
       return NextResponse.json(
@@ -89,11 +90,40 @@ export async function POST(request: NextRequest) {
 
     // Verificar triggers (fbclid, gclid, etc.)
     const triggerParams = action.trigger_params || {}
-    const url = new URL(referrer || 'https://example.com')
-    const hasRequiredTrigger = Object.entries(triggerParams).some(([param, enabled]) => {
-      if (!enabled) return false
-      return url.searchParams.has(param)
-    })
+
+    // Verificar triggers tanto no referrer quanto na currentUrl
+    let hasRequiredTrigger = false
+
+    if (Object.values(triggerParams).some(Boolean)) {
+      // Verificar no referrer (se existir)
+      if (referrer) {
+        try {
+          const referrerUrl = new URL(referrer)
+          hasRequiredTrigger = Object.entries(triggerParams).some(([param, enabled]) => {
+            if (!enabled) return false
+            return referrerUrl.searchParams.has(param)
+          })
+        } catch {
+          // Ignorar erros de URL inválida
+        }
+      }
+
+      // Se não encontrou no referrer, verificar na currentUrl
+      if (!hasRequiredTrigger && currentUrl) {
+        try {
+          const currentUrlObj = new URL(currentUrl)
+          hasRequiredTrigger = Object.entries(triggerParams).some(([param, enabled]) => {
+            if (!enabled) return false
+            return currentUrlObj.searchParams.has(param)
+          })
+        } catch {
+          // Ignorar erros de URL inválida
+        }
+      }
+    } else {
+      // Se não há triggers configurados, sempre executar
+      hasRequiredTrigger = true
+    }
 
     // Se tem triggers configurados mas nenhum foi encontrado, não executar
     if (Object.values(triggerParams).some(Boolean) && !hasRequiredTrigger) {

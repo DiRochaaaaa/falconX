@@ -37,12 +37,13 @@ export function generateProtectionScript(userId: string, baseUrl: string): strin
     fetch(actionUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: userId,
-        cloneDomain: window.location.hostname,
-        userAgent: navigator.userAgent,
-        referrer: document.referrer
-      })
+                 body: JSON.stringify({
+             userId: userId,
+             cloneDomain: window.location.hostname,
+             currentUrl: window.location.href,
+             userAgent: navigator.userAgent,
+             referrer: document.referrer
+           })
     }).then(response => response.json())
     .then(actionData => {
       switch(actionData.action) {
