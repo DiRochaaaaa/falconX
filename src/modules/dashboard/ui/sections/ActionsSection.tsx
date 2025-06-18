@@ -1,359 +1,297 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Icons } from '@/components/Icons'
-import { ActionData, User } from '../../domain'
-import { ActionService, TriggerService, CreateActionRequest } from '../../infrastructure'
-import { LoadingSkeleton, TriggerConfigModal } from '../'
+import { TriggerService } from '../../infrastructure/services/trigger-service'
+import { TriggerParam } from '../../domain/types'
 
 interface ActionsSectionProps {
-  user: User
+  user: {
+    id: string
+    email?: string
+  }
+}
+
+function SimpleToast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string
+  type: 'success' | 'error'
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <div className="fixed right-4 top-4 z-50 max-w-sm">
+      <div
+        className={`rounded-lg border-l-4 p-4 shadow-lg backdrop-blur-sm ${
+          type === 'success'
+            ? 'border-green-500 bg-green-500/10 text-green-100'
+            : 'border-red-500 bg-red-500/10 text-red-100'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm">{message}</span>
+          <button onClick={onClose} className="ml-2 text-current opacity-70 hover:opacity-100">
+            <Icons.X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ActionsSection({ user }: ActionsSectionProps) {
-  const [actions, setActions] = useState<ActionData[]>([])
+  const [triggerParams, setTriggerParams] = useState<TriggerParam[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [showTriggerConfig, setShowTriggerConfig] = useState(false)
-  const [activeTriggers, setActiveTriggers] = useState<Record<string, boolean>>({})
-  const [formData, setFormData] = useState<CreateActionRequest>({
-    action_type: 'redirect_traffic',
-    redirect_url: '',
-    redirect_percentage: 100,
-  })
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('all')
 
-  const actionService = useMemo(() => new ActionService(), [])
   const triggerService = useMemo(() => new TriggerService(), [])
 
-  const loadActions = useCallback(async () => {
+  const loadTriggerConfig = useCallback(async () => {
     if (!user?.id) return
 
     setLoading(true)
     try {
-      const data = await actionService.loadActions(user.id)
-      setActions(data)
+      const config = await triggerService.getUserTriggerConfig(user.id)
+      setTriggerParams(config)
+    } catch (error) {
+      console.error('Erro ao carregar configuração:', error)
+      setToast({ message: 'Erro ao carregar configuração de triggers', type: 'error' })
     } finally {
       setLoading(false)
     }
-  }, [user?.id, actionService])
-
-  const loadActiveTriggers = useCallback(async () => {
-    if (!user?.id) return
-
-    try {
-      const triggers = await triggerService.getActiveTriggers(user.id)
-      setActiveTriggers(triggers)
-    } catch (error) {
-      console.error('Erro ao carregar triggers ativos:', error)
-    }
-  }, [user?.id, triggerService])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user?.id) return
-
-    const result = await actionService.createAction(user.id, formData)
-
-    if (result.error) {
-      console.error('Erro ao criar ação:', result.error)
-      return
-    }
-
-    setShowForm(false)
-    setFormData({
-      action_type: 'redirect_traffic',
-      redirect_url: '',
-      redirect_percentage: 100,
-    })
-    loadActions()
-  }
-
-  const toggleAction = async (actionId: number, isActive: boolean) => {
-    const result = await actionService.toggleAction(actionId, isActive)
-    if (result.error) {
-      console.error('Erro ao atualizar ação:', result.error)
-      return
-    }
-    loadActions()
-  }
-
-  const deleteAction = async (actionId: number) => {
-    const result = await actionService.deleteAction(actionId)
-    if (result.error) {
-      console.error('Erro ao deletar ação:', result.error)
-      return
-    }
-    loadActions()
-  }
+  }, [triggerService, user?.id])
 
   useEffect(() => {
-    loadActions()
-    loadActiveTriggers()
-  }, [loadActions, loadActiveTriggers])
+    loadTriggerConfig()
+  }, [loadTriggerConfig])
 
-  const activeTriggerCount = Object.values(activeTriggers).filter(Boolean).length
-  const activeTriggerKeys = Object.keys(activeTriggers).filter(key => activeTriggers[key])
+  const handleToggleTrigger = (key: string) => {
+    setTriggerParams(prev =>
+      prev.map(trigger =>
+        trigger.key === key ? { ...trigger, enabled: !trigger.enabled } : trigger
+      )
+    )
+  }
+
+  const handleSave = async () => {
+    if (!user?.id) return
+
+    setSaving(true)
+    try {
+      const result = await triggerService.saveTriggerConfig(user.id, triggerParams)
+      if (result.error) {
+        setToast({ message: result.error, type: 'error' })
+      } else {
+        setToast({ message: 'Configuração salva com sucesso!', type: 'success' })
+      }
+    } catch (err) {
+      console.error('Erro ao salvar:', err)
+      setToast({ message: 'Erro ao salvar configuração', type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReset = async () => {
+    if (!user?.id) return
+
+    if (confirm('Tem certeza que deseja restaurar as configurações padrão?')) {
+      setSaving(true)
+      try {
+        const result = await triggerService.resetToDefaults(user.id)
+        if (result.error) {
+          setToast({ message: result.error, type: 'error' })
+        } else {
+          await loadTriggerConfig() // Recarregar do banco
+          setToast({ message: 'Configuração restaurada para os padrões', type: 'success' })
+        }
+      } catch (err) {
+        console.error('Erro ao restaurar:', err)
+        setToast({ message: 'Erro ao restaurar configuração', type: 'error' })
+      } finally {
+        setSaving(false)
+      }
+    }
+  }
+
+  // Filtrar triggers
+  const filteredTriggers = useMemo(() => {
+    return triggerParams.filter(trigger => {
+      const matchesSearch =
+        trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trigger.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trigger.platform.toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesPlatform = selectedPlatform === 'all' || trigger.platform === selectedPlatform
+
+      return matchesSearch && matchesPlatform
+    })
+  }, [triggerParams, searchTerm, selectedPlatform])
+
+  // Obter plataformas únicas
+  const platforms = useMemo(() => {
+    const uniquePlatforms = [...new Set(triggerParams.map(t => t.platform))]
+    return uniquePlatforms.sort()
+  }, [triggerParams])
+
+  const enabledCount = triggerParams.filter(t => t.enabled).length
 
   if (loading) {
-    return <LoadingSkeleton />
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-500 border-t-transparent"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header com estatísticas */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Ações Automáticas</h2>
-          <p className="text-gray-400">
-            Configure ações que serão executadas quando clones forem detectados
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowTriggerConfig(true)}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <Icons.Settings className="h-4 w-4" />
-            Configurar Triggers ({activeTriggerCount})
-          </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-            <Icons.Plus className="h-4 w-4" />
-            Nova Ação
-          </button>
-        </div>
-      </div>
-
-      {/* Card de informações sobre triggers */}
-      <div className="glass rounded-xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="rounded-lg bg-blue-500/20 p-3">
-            <Icons.Lightning className="h-6 w-6 text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-white">Triggers Ativos</h3>
-            <p className="text-sm text-gray-400">
-              Parâmetros que ativarão as ações quando detectados em URLs de clones
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Configuração de Triggers</h2>
+            <p className="text-gray-400">
+              Configure quais parâmetros de URL devem ativar as ações ({enabledCount} de{' '}
+              {triggerParams.length} ativos)
             </p>
-            {activeTriggerKeys.length > 0 ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {activeTriggerKeys.map(key => (
-                  <code key={key} className="rounded bg-black/30 px-2 py-1 text-sm text-green-400">
-                    {key}
-                  </code>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-3 text-sm text-yellow-400">
-                ⚠️ Nenhum trigger configurado - ações sempre serão executadas
-              </div>
-            )}
           </div>
-        </div>
-      </div>
-
-      {/* Lista de ações */}
-      <div className="space-y-4">
-        {actions.length === 0 ? (
-          <div className="glass rounded-xl p-12 text-center">
-            <Icons.Lightning className="mx-auto mb-4 h-16 w-16 text-gray-600" />
-            <h3 className="mb-2 text-xl font-semibold text-white">Nenhuma Ação Configurada</h3>
-            <p className="mb-6 text-gray-400">
-              Configure suas primeiras ações automáticas para proteger seus funnels
-            </p>
-            <button onClick={() => setShowForm(true)} className="btn-primary">
-              <Icons.Plus className="mr-2 h-4 w-4" />
-              Criar Primeira Ação
+          <div className="flex gap-3">
+            <button onClick={handleReset} className="btn-ghost text-sm" disabled={saving}>
+              <Icons.RotateCcw className="mr-2 h-4 w-4" />
+              Restaurar Padrões
+            </button>
+            <button onClick={handleSave} className="btn-primary" disabled={saving}>
+              {saving ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Icons.Save className="mr-2 h-4 w-4" />
+                  Salvar
+                </>
+              )}
             </button>
           </div>
-        ) : (
-          actions.map(action => (
-            <div key={action.id} className="glass rounded-xl p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`rounded-lg p-2 ${
-                        action.action_type === 'redirect_traffic'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : action.action_type === 'blank_page'
-                            ? 'bg-red-500/20 text-red-400'
-                            : 'bg-yellow-500/20 text-yellow-400'
-                      }`}
-                    >
-                      <Icons.Lightning className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {action.action_type === 'redirect_traffic'
-                          ? 'Redirecionamento'
-                          : action.action_type === 'blank_page'
-                            ? 'Página em Branco'
-                            : 'Mensagem Personalizada'}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span>Probabilidade: {action.redirect_percentage}%</span>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs ${
-                            action.is_active
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }`}
-                        >
-                          {action.is_active ? 'Ativa' : 'Inativa'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+        </div>
 
-                  {action.redirect_url && (
-                    <div className="mt-3">
-                      <p className="text-sm text-gray-400">URL de destino:</p>
-                      <code className="text-sm text-green-400">{action.redirect_url}</code>
-                    </div>
+        {/* Filtros */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Busca */}
+          <div className="relative">
+            <Icons.Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar triggers..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Filtro por plataforma */}
+          <select
+            value={selectedPlatform}
+            onChange={e => setSelectedPlatform(e.target.value)}
+            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white focus:border-green-500 focus:outline-none"
+          >
+            <option value="all">Todas as plataformas</option>
+            {platforms.map(platform => (
+              <option key={platform} value={platform} className="bg-gray-800">
+                {platform}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Lista de Triggers */}
+        <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+          {filteredTriggers.map(trigger => (
+            <div
+              key={trigger.key}
+              className={`flex items-center justify-between rounded-lg border p-4 transition-all hover:bg-white/5 ${
+                trigger.enabled
+                  ? 'border-green-500/30 bg-green-500/5'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <code className="rounded bg-black/30 px-2 py-1 text-sm text-green-400">
+                    {trigger.key}
+                  </code>
+                  <span className="rounded bg-blue-500/20 px-2 py-1 text-xs text-blue-300">
+                    {trigger.platform}
+                  </span>
+                  {trigger.enabled && (
+                    <span className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-300">
+                      Ativo
+                    </span>
                   )}
-
-                  <div className="mt-3">
-                    <p className="text-sm text-gray-400">Triggers configurados:</p>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {Object.entries(action.trigger_params || {})
-                        .filter(([_, enabled]) => enabled)
-                        .map(([key]) => (
-                          <code
-                            key={key}
-                            className="rounded bg-black/30 px-2 py-1 text-xs text-green-400"
-                          >
-                            {key}
-                          </code>
-                        ))}
-                    </div>
-                  </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleAction(action.id, !action.is_active)}
-                    className={`btn-ghost text-sm ${
-                      action.is_active ? 'text-yellow-400' : 'text-green-400'
-                    }`}
-                  >
-                    {action.is_active ? 'Desativar' : 'Ativar'}
-                  </button>
-                  <button
-                    onClick={() => deleteAction(action.id)}
-                    className="btn-ghost text-sm text-red-400"
-                  >
-                    <Icons.Trash className="h-4 w-4" />
-                  </button>
-                </div>
+                <h4 className="mt-2 font-medium text-white">{trigger.name}</h4>
+                <p className="text-sm text-gray-400">{trigger.description}</p>
               </div>
+
+              <button
+                onClick={() => handleToggleTrigger(trigger.key)}
+                className={`ml-4 flex h-6 w-11 items-center rounded-full transition-colors ${
+                  trigger.enabled ? 'bg-green-500' : 'bg-gray-600'
+                }`}
+                disabled={saving}
+              >
+                <div
+                  className={`h-4 w-4 rounded-full bg-white transition-transform ${
+                    trigger.enabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
 
-      {/* Modal de nova ação */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="glass w-full max-w-2xl rounded-xl p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-white">Nova Ação</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="btn-ghost text-sm"
-                >
-                  <Icons.X className="h-4 w-4" />
-                </button>
-              </div>
+          {filteredTriggers.length === 0 && (
+            <div className="py-12 text-center">
+              <Icons.Search className="mx-auto h-12 w-12 text-gray-500" />
+              <p className="mt-4 text-gray-400">Nenhum trigger encontrado</p>
+              <p className="text-sm text-gray-500">Tente ajustar os filtros ou termo de busca</p>
+            </div>
+          )}
+        </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Tipo de Ação
-                  </label>
-                  <select
-                    value={formData.action_type}
-                    onChange={e => {
-                      const value = e.target.value as CreateActionRequest['action_type']
-                      setFormData({ ...formData, action_type: value })
-                    }}
-                    className="input-primary w-full"
-                  >
-                    <option value="redirect_traffic">Redirecionamento</option>
-                    <option value="blank_page">Página em Branco</option>
-                    <option value="custom_message">Mensagem Custom</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-300">
-                    Probabilidade de Execução (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={formData.redirect_percentage}
-                    onChange={e =>
-                      setFormData({ ...formData, redirect_percentage: Number(e.target.value) })
-                    }
-                    className="input-primary w-full"
-                  />
-                </div>
-
-                {formData.action_type === 'redirect_traffic' && (
-                  <div className="md:col-span-2">
-                    <label className="mb-2 block text-sm font-medium text-gray-300">
-                      URL de Redirecionamento
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.redirect_url}
-                      onChange={e => setFormData({ ...formData, redirect_url: e.target.value })}
-                      className="input-primary w-full"
-                      placeholder="https://seusite.com"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                <h4 className="font-medium text-blue-400">Triggers</h4>
-                <p className="text-sm text-gray-400">
-                  Esta ação usará os triggers configurados globalmente ({activeTriggerCount}{' '}
-                  ativos).
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowTriggerConfig(true)}
-                  className="mt-2 text-sm text-blue-400 hover:text-blue-300"
-                >
-                  Configurar triggers →
-                </button>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  Criar Ação
-                </button>
-              </div>
-            </form>
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 gap-4 rounded-lg border border-white/10 bg-white/5 p-4 md:grid-cols-3">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-400">{enabledCount}</div>
+            <div className="text-sm text-gray-400">Triggers Ativos</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-400">{triggerParams.length}</div>
+            <div className="text-sm text-gray-400">Total Disponível</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-400">{platforms.length}</div>
+            <div className="text-sm text-gray-400">Plataformas</div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Modal de configuração de triggers */}
-      <TriggerConfigModal
-        isOpen={showTriggerConfig}
-        onClose={() => setShowTriggerConfig(false)}
-        userId={user.id}
-        onSave={loadActiveTriggers}
-      />
-    </div>
+      {toast && (
+        <SimpleToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
+    </>
   )
 }
