@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export type ActionType = 'redirect' | 'blank_page' | 'custom_message'
+export type ActionType = 'redirect_traffic' | 'blank_page' | 'custom_message'
 
 export interface CloneAction {
   id: number

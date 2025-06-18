@@ -462,10 +462,11 @@ function ScriptsSection({
         <script>
         (function(){
           const userId = '${user.id}';
-          const apiUrl = '${window.location.origin}/api/detect';
+          const detectUrl = '${window.location.origin}/api/detect';
+          const actionUrl = '${window.location.origin}/api/execute-action';
           
           function detectClone() {
-            fetch(apiUrl, {
+            fetch(detectUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -476,7 +477,42 @@ function ScriptsSection({
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString()
               })
-            });
+            }).then(response => response.json())
+            .then(data => {
+              // Se clone foi detectado, executar ações
+              if (data.status === 'clone_detected') {
+                executeAction();
+              }
+            }).catch(err => console.log('FalconX: Detection error'));
+          }
+          
+          function executeAction() {
+            fetch(actionUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: userId,
+                cloneDomain: window.location.hostname,
+                userAgent: navigator.userAgent,
+                referrer: document.referrer
+              })
+            }).then(response => response.json())
+            .then(actionData => {
+              switch(actionData.action) {
+                case 'redirect':
+                  if (actionData.url) {
+                    window.location.href = actionData.url;
+                  }
+                  break;
+                case 'blank':
+                  document.body.innerHTML = '';
+                  document.body.style.background = '#000';
+                  break;
+                case 'message':
+                  document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial;font-size:24px;color:#333;text-align:center;background:#f5f5f5;">' + (actionData.customMessage || 'Site não autorizado') + '</div>';
+                  break;
+              }
+            }).catch(err => console.log('FalconX: Action error'));
           }
           
           // Detecção inicial
@@ -612,7 +648,7 @@ function ScriptsSection({
 interface ActionData {
   id: number
   user_id: string
-  action_type: 'redirect' | 'blank_page' | 'custom_message'
+  action_type: 'redirect_traffic' | 'blank_page' | 'custom_message'
   redirect_url?: string
   redirect_percentage: number
   trigger_params: Record<string, boolean>
@@ -626,12 +662,12 @@ function ActionsSection({ user }: { user: User | null }) {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<{
-    action_type: 'redirect' | 'blank_page' | 'custom_message'
+    action_type: 'redirect_traffic' | 'blank_page' | 'custom_message'
     redirect_url: string
     redirect_percentage: number
     trigger_params: Record<string, boolean>
   }>({
-    action_type: 'redirect',
+    action_type: 'redirect_traffic',
     redirect_url: '',
     redirect_percentage: 100,
     trigger_params: { fbclid: true, gclid: false, utm_source: false },
@@ -666,7 +702,7 @@ function ActionsSection({ user }: { user: User | null }) {
       const { error } = await supabase.from('clone_actions').insert({
         user_id: user.id,
         action_type: formData.action_type,
-        redirect_url: formData.action_type === 'redirect' ? formData.redirect_url : null,
+        redirect_url: formData.action_type === 'redirect_traffic' ? formData.redirect_url : null,
         redirect_percentage: formData.redirect_percentage,
         trigger_params: formData.trigger_params,
         is_active: true,
@@ -676,7 +712,7 @@ function ActionsSection({ user }: { user: User | null }) {
 
       setShowForm(false)
       setFormData({
-        action_type: 'redirect',
+        action_type: 'redirect_traffic',
         redirect_url: '',
         redirect_percentage: 100,
         trigger_params: { fbclid: true, gclid: false, utm_source: false },
@@ -718,7 +754,7 @@ function ActionsSection({ user }: { user: User | null }) {
 
   const getActionIcon = (type: string) => {
     switch (type) {
-      case 'redirect':
+      case 'redirect_traffic':
         return <Icons.ArrowRight className="h-5 w-5 text-blue-400" />
       case 'blank_page':
         return <Icons.EyeOff className="h-5 w-5 text-red-400" />
@@ -731,7 +767,7 @@ function ActionsSection({ user }: { user: User | null }) {
 
   const getActionName = (type: string) => {
     switch (type) {
-      case 'redirect':
+      case 'redirect_traffic':
         return 'Redirecionamento'
       case 'blank_page':
         return 'Página em Branco'
@@ -840,18 +876,21 @@ function ActionsSection({ user }: { user: User | null }) {
                 <select
                   value={formData.action_type}
                   onChange={e => {
-                    const value = e.target.value as 'redirect' | 'blank_page' | 'custom_message'
+                    const value = e.target.value as
+                      | 'redirect_traffic'
+                      | 'blank_page'
+                      | 'custom_message'
                     setFormData({ ...formData, action_type: value })
                   }}
                   className="input-primary w-full"
                 >
-                  <option value="redirect">Redirecionamento</option>
+                  <option value="redirect_traffic">Redirecionamento</option>
                   <option value="blank_page">Página em Branco</option>
                   <option value="custom_message">Mensagem Custom</option>
                 </select>
               </div>
 
-              {formData.action_type === 'redirect' && (
+              {formData.action_type === 'redirect_traffic' && (
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-300">
                     URL de Redirecionamento
