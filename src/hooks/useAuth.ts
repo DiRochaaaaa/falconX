@@ -5,15 +5,37 @@ import { User } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '../lib/supabase'
 import { clearUserCache } from './useDataCache'
 
+interface AuthState {
+  user: User | null
+  profile: UserProfile | null
+  loading: boolean
+  initialized: boolean
+  error: string | null
+}
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    profile: null,
+    loading: true,
+    initialized: false,
+    error: null,
+  })
+
   const mountedRef = useRef(true)
+  const initializingRef = useRef(false)
+
+  const updateAuthState = useCallback((updates: Partial<AuthState>) => {
+    if (!mountedRef.current) return
+    setAuthState(prev => ({ ...prev, ...updates }))
+  }, [])
 
   const loadProfile = useCallback(
-    async (userId: string, userEmail?: string, userFullName?: string) => {
+    async (
+      userId: string,
+      userEmail?: string,
+      userFullName?: string
+    ): Promise<UserProfile | null> => {
       if (!mountedRef.current) return null
 
       try {
@@ -36,29 +58,30 @@ export function useAuth() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }
-          setProfile(basicProfile)
+          updateAuthState({ profile: basicProfile, error: null })
           return basicProfile
         } else if (error) {
           console.error('Erro ao carregar perfil:', error)
-          setProfile(null)
+          updateAuthState({ profile: null, error: 'Erro ao carregar perfil' })
           return null
         } else {
-          setProfile(data)
+          updateAuthState({ profile: data, error: null })
           return data
         }
       } catch (error) {
         console.error('Erro ao carregar perfil:', error)
-        if (mountedRef.current) {
-          setProfile(null)
-        }
+        updateAuthState({ profile: null, error: 'Erro ao carregar perfil' })
         return null
       }
     },
-    []
+    [updateAuthState]
   )
 
   const initializeAuth = useCallback(async () => {
-    if (!mountedRef.current) return
+    if (!mountedRef.current || initializingRef.current) return
+
+    initializingRef.current = true
+    updateAuthState({ loading: true, error: null })
 
     try {
       const {
@@ -70,95 +93,104 @@ export function useAuth() {
 
       if (error) {
         console.error('Erro ao verificar sessão inicial:', error)
-        setUser(null)
-        setProfile(null)
-        setInitialized(true)
-        setLoading(false)
+        updateAuthState({
+          user: null,
+          profile: null,
+          loading: false,
+          initialized: true,
+          error: 'Erro ao verificar autenticação',
+        })
         return
       }
 
-      setUser(session?.user ?? null)
+      const user = session?.user ?? null
+      updateAuthState({ user, error: null })
 
-      if (session?.user) {
-        await loadProfile(
-          session.user.id,
-          session.user.email,
-          session.user.user_metadata?.full_name
-        )
+      if (user) {
+        await loadProfile(user.id, user.email, user.user_metadata?.full_name)
       } else {
-        setProfile(null)
+        updateAuthState({ profile: null })
       }
 
-      setInitialized(true)
-      setLoading(false)
+      updateAuthState({
+        loading: false,
+        initialized: true,
+      })
     } catch (error) {
       console.error('Erro na inicialização da autenticação:', error)
-      if (mountedRef.current) {
-        setUser(null)
-        setProfile(null)
-        setInitialized(true)
-        setLoading(false)
-      }
+      updateAuthState({
+        user: null,
+        profile: null,
+        loading: false,
+        initialized: true,
+        error: 'Erro na inicialização',
+      })
+    } finally {
+      initializingRef.current = false
     }
-  }, [loadProfile])
+  }, [updateAuthState, loadProfile])
 
+  // Efeito de inicialização - executado apenas uma vez
   useEffect(() => {
     mountedRef.current = true
-
-    // Inicialização
     initializeAuth()
 
-    // Listener para mudanças de auth
+    return () => {
+      mountedRef.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Dependência vazia para executar apenas uma vez
+
+  // Efeito para listener de mudanças de auth - separado da inicialização
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mountedRef.current) return
+      if (!mountedRef.current || initializingRef.current) return
 
       // Auth state change event
 
+      const user = session?.user ?? null
+      const previousUserId = authState.user?.id
+
       // Atualizar estado do usuário imediatamente
-      const previousUserId = user?.id
-      setUser(session?.user ?? null)
+      updateAuthState({ user, error: null })
 
       // Lidar com eventos específicos
-      if (event === 'SIGNED_IN' && session?.user) {
-        await loadProfile(
-          session.user.id,
-          session.user.email,
-          session.user.user_metadata?.full_name
-        )
+      if (event === 'SIGNED_IN' && user) {
+        updateAuthState({ loading: true })
+        await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+        updateAuthState({ loading: false })
       } else if (event === 'SIGNED_OUT') {
-        setProfile(null)
+        updateAuthState({ profile: null, loading: false })
         // Limpar cache do usuário anterior ao fazer logout
         if (previousUserId) {
           clearUserCache(previousUserId)
         }
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+      } else if (event === 'TOKEN_REFRESHED' && user) {
         // Manter perfil existente, só atualizar user se necessário
-        if (!profile) {
-          await loadProfile(
-            session.user.id,
-            session.user.email,
-            session.user.user_metadata?.full_name
-          )
+        if (!authState.profile) {
+          updateAuthState({ loading: true })
+          await loadProfile(user.id, user.email, user.user_metadata?.full_name)
+          updateAuthState({ loading: false })
         }
       }
 
-      // Garantir que loading seja desabilitado
-      if (mountedRef.current) {
-        setLoading(false)
-      }
+      // Garantir que loading seja desabilitado e initialized seja true
+      updateAuthState({
+        loading: false,
+        initialized: true,
+      })
     })
 
     return () => {
-      mountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [initializeAuth, loadProfile, user?.id, profile])
+  }, [updateAuthState, loadProfile, authState.user?.id, authState.profile])
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      setLoading(true)
+      updateAuthState({ loading: true, error: null })
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -173,59 +205,65 @@ export function useAuth() {
       return { data, error }
     } catch (error) {
       console.error('Erro no signup:', error)
+      updateAuthState({ error: 'Erro ao criar conta' })
       return { data: null, error }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
+      updateAuthState({ loading: false })
     }
   }
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true)
+      updateAuthState({ loading: true, error: null })
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
+      if (error) {
+        updateAuthState({ error: 'Credenciais inválidas' })
+      }
+
       return { data, error }
     } catch (error) {
       console.error('Erro no signin:', error)
+      updateAuthState({ error: 'Erro ao fazer login' })
       return { data: null, error }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
+      updateAuthState({ loading: false })
     }
   }
 
   const signOut = async () => {
     try {
-      setLoading(true)
-      const currentUserId = user?.id
+      updateAuthState({ loading: true, error: null })
+      const currentUserId = authState.user?.id
 
       const { error } = await supabase.auth.signOut()
 
-      if (!error && mountedRef.current) {
-        setUser(null)
-        setProfile(null)
+      if (!error) {
+        updateAuthState({
+          user: null,
+          profile: null,
+          loading: false,
+        })
 
         // Limpar cache do usuário ao fazer logout
         if (currentUserId) {
           clearUserCache(currentUserId)
         }
+      } else {
+        updateAuthState({ error: 'Erro ao sair' })
       }
 
       return { error }
     } catch (error) {
       console.error('Erro no signout:', error)
+      updateAuthState({ error: 'Erro ao sair' })
       return { error }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
+      updateAuthState({ loading: false })
     }
   }
 
@@ -234,11 +272,12 @@ export function useAuth() {
   }, [initializeAuth])
 
   return {
-    user,
-    profile,
-    loading,
-    initialized,
-    isAuthenticated: !!user && initialized,
+    user: authState.user,
+    profile: authState.profile,
+    loading: authState.loading,
+    initialized: authState.initialized,
+    error: authState.error,
+    isAuthenticated: !!authState.user && authState.initialized,
     signUp,
     signIn,
     signOut,
