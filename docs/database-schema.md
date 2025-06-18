@@ -17,7 +17,9 @@ O Falcon X é um SaaS que detecta clones de funis de vendas através de um scrip
 
 ## 🏗️ Estrutura do Banco de Dados
 
-### Schema: `falconx`
+### Schema: `public` (Supabase na nuvem)
+
+**IMPORTANTE**: O sistema utiliza Supabase na nuvem com schema `public`, não `falconx`.
 
 ## 📊 Tabelas
 
@@ -137,6 +139,29 @@ Log detalhado de todas as detecções para análise.
 - `referrer` (TEXT) - Referrer
 - `page_url` (TEXT) - URL da página
 - `timestamp` (TIMESTAMP) - Momento da detecção
+
+### 9. `user_trigger_configs` - Configurações de Triggers
+
+Configurações personalizadas de triggers por usuário para detecção de parâmetros de ads.
+
+**Campos:**
+
+- `id` (SERIAL, PK)
+- `user_id` (UUID, FK) - Usuário proprietário
+- `trigger_params` (JSONB) - Configuração de triggers: `{"fbclid": true, "utm_source": true, ...}`
+- `created_at` (TIMESTAMP) - Data de criação
+- `updated_at` (TIMESTAMP) - Última atualização
+
+**Triggers Suportados:**
+
+- **Facebook/Meta**: `fbclid`, `fb_action_ids`, `fb_action_types`, `fb_source`
+- **Google Ads**: `gclid`, `gclsrc`, `dclid`, `wbraid`, `gbraid`
+- **UTM Parameters**: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`
+- **TikTok**: `ttclid`, `tt_content`
+- **Twitter/X**: `twclid`
+- **LinkedIn**: `li_fat_id`, `lipi`
+- **YouTube**: `ytclid`
+- **Genéricos**: `ref`, `source`, `medium`, `campaign`, `ad_id`, `creative_id`, `placement_id`
 
 ---
 
