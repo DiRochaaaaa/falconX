@@ -213,7 +213,7 @@ export function useDashboardStats(userId: string) {
       const [
         { count: allowedDomainsCount },
         { data: uniqueClones },
-        { count: totalDetectionsCount },
+        { data: clonesWithVisitors },
         { count: activeActionsCount },
       ] = await Promise.all([
         supabase
@@ -223,10 +223,7 @@ export function useDashboardStats(userId: string) {
 
         supabase.from('detected_clones').select('original_domain').eq('user_id', userId),
 
-        supabase
-          .from('detected_clones')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId),
+        supabase.from('detected_clones').select('unique_visitors_count').eq('user_id', userId),
 
         supabase
           .from('clone_actions')
@@ -236,11 +233,13 @@ export function useDashboardStats(userId: string) {
       ])
 
       const uniqueClonesCount = new Set(uniqueClones?.map(c => c.original_domain) || []).size
+      const totalUniqueVisitors =
+        clonesWithVisitors?.reduce((sum, clone) => sum + (clone.unique_visitors_count || 0), 0) || 0
 
       return {
         allowedDomains: allowedDomainsCount || 0,
         detectedClones: uniqueClonesCount || 0,
-        totalDetections: totalDetectionsCount || 0,
+        uniqueVisitors: totalUniqueVisitors,
         activeActions: activeActionsCount || 0,
       }
     },

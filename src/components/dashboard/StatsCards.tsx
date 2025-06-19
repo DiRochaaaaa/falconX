@@ -5,7 +5,7 @@ import { Icons } from '@/components/Icons'
 interface DashboardStats {
   allowedDomains: number
   detectedClones: number
-  totalDetections: number
+  uniqueVisitors: number
   activeActions: number
 }
 
@@ -136,18 +136,18 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
         value={loading ? '...' : stats?.detectedClones || 0}
         loading={loading}
         color="red"
-        subtitle="Últimos 30 dias"
+        subtitle="Total detectado"
         trend={stats?.detectedClones && stats.detectedClones > 0 ? 'up' : 'neutral'}
       />
 
       <StatCard
-        icon={Icons.Dashboard}
-        title="Total de Detecções"
-        value={loading ? '...' : stats?.totalDetections || 0}
+        icon={Icons.User}
+        title="Visitantes Únicos"
+        value={loading ? '...' : stats?.uniqueVisitors || 0}
         loading={loading}
         color="orange"
-        subtitle="Desde o início"
-        trend="up"
+        subtitle="Nas páginas clonadas"
+        trend={stats?.uniqueVisitors && stats.uniqueVisitors > 0 ? 'up' : 'neutral'}
       />
 
       <StatCard
