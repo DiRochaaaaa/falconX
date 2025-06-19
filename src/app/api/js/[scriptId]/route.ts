@@ -45,10 +45,22 @@ export async function GET(
 }
 
 /**
+ * Converte scriptId para userId (reverso da função generateScriptId)
+ * Para agora, vamos usar o próprio scriptId como userId temporariamente
+ * TODO: Implementar lookup real no banco de dados
+ */
+function extractUserIdFromScriptId(scriptId: string): string {
+  // Por enquanto, usar o scriptId como identificador único
+  // Na implementação real, fazer lookup no banco para encontrar o userId
+  return scriptId.replace('fx_', '')
+}
+
+/**
  * Gera script básico para teste
  */
 function generateBasicScript(scriptId: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const userId = extractUserIdFromScriptId(scriptId)
 
   return `
 (function() {
@@ -59,12 +71,12 @@ function generateBasicScript(scriptId: string): string {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      scriptId: '${scriptId}',
-      domain: location.hostname,
+      uid: btoa('${userId}'), // userId em Base64
+      dom: location.hostname, // domain -> dom
       url: location.href,
-      referrer: document.referrer,
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString()
+      ref: document.referrer, // referrer -> ref
+      ua: navigator.userAgent, // userAgent -> ua
+      ts: new Date().toISOString() // timestamp -> ts
     })
   }).then(response => response.json())
   .then(data => {
@@ -75,8 +87,8 @@ function generateBasicScript(scriptId: string): string {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scriptId: '${scriptId}',
-          domain: location.hostname,
+          uid: btoa('${userId}'), // userId em Base64
+          dom: location.hostname, // domain -> dom
           url: location.href
         })
       }).then(response => response.json())
