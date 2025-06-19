@@ -1,21 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import { ActionData } from '../../domain'
-import { TriggerService } from './trigger-service'
 
 export interface CreateActionRequest {
   action_type: 'redirect_traffic' | 'blank_page' | 'custom_message'
   redirect_url: string
   redirect_percentage: number
-  trigger_params?: Record<string, boolean> // Opcional - usa configuração global se não fornecido
 }
 
 export class ActionService {
-  private triggerService: TriggerService
-
-  constructor() {
-    this.triggerService = new TriggerService()
-  }
-
   async loadActions(userId: string): Promise<ActionData[]> {
     try {
       const { data, error } = await supabase
@@ -38,19 +30,16 @@ export class ActionService {
 
   async createAction(userId: string, actionData: CreateActionRequest): Promise<{ error?: string }> {
     try {
-      // Se não foram fornecidos triggers específicos, usa configuração global do usuário
-      let triggerParams = actionData.trigger_params
-      if (!triggerParams) {
-        triggerParams = await this.triggerService.getActiveTriggers(userId)
-      }
-
       const { error } = await supabase.from('clone_actions').insert({
         user_id: userId,
         action_type: actionData.action_type,
         redirect_url:
-          actionData.action_type === 'redirect_traffic' ? actionData.redirect_url : null,
+          actionData.action_type === 'redirect_traffic'
+            ? actionData.redirect_url
+            : actionData.action_type === 'custom_message'
+              ? actionData.redirect_url
+              : null,
         redirect_percentage: actionData.redirect_percentage,
-        trigger_params: triggerParams,
         is_active: true,
       })
 

@@ -20,7 +20,6 @@ import {
 // Lazy load components for better performance
 const StatsCards = lazy(() => import('@/components/dashboard/StatsCards'))
 const RecentDetections = lazy(() => import('@/components/dashboard/RecentDetections'))
-const QuickActions = lazy(() => import('@/components/dashboard/QuickActions'))
 
 // Lazy load other sections
 const DomainsSection = lazy(() => import('./sections/DomainsSection'))
@@ -74,9 +73,21 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
         </div>
 
         {/* Plan Info Badge */}
-        <div className="bg-gradient-green/10 inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-green-400 ring-1 ring-green-500/20">
-          <Icons.Crown className="mr-2 h-4 w-4" />
-          Plano {profile?.plan_type?.toUpperCase() || 'FREE'}
+        <div className="flex items-center space-x-4">
+          <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-500/10 to-emerald-600/10 px-4 py-2 text-sm font-medium text-green-400 ring-1 ring-green-500/20 backdrop-blur-sm">
+            <Icons.Crown className="mr-2 h-4 w-4" />
+            Plano {profile?.plan_type?.toUpperCase() || 'FREE'}
+          </div>
+          <div className="inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20">
+            <div className="mr-2 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400"></div>
+            Sistema Ativo
+          </div>
+          <div className="inline-flex items-center rounded-full bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-400 ring-1 ring-purple-500/20">
+            <Icons.Lightning className="mr-1 h-3 w-3" />
+            {planLimits.domains === -1
+              ? 'Ilimitado'
+              : `${stats?.allowedDomains || 0}/${planLimits.domains} domínios`}
+          </div>
         </div>
       </div>
 
@@ -108,24 +119,6 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
             <StatsCards stats={stats} loading={statsLoading} planLimits={planLimits} />
           </Suspense>
         </div>
-      </div>
-
-      {/* Quick Actions Section */}
-      <div className="mb-12">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-white">Ações Rápidas</h2>
-          <p className="text-gray-400">Gerencie sua proteção rapidamente</p>
-        </div>
-
-        <Suspense
-          fallback={
-            <div className="card">
-              <LoadingSkeleton className="h-32" />
-            </div>
-          }
-        >
-          <QuickActions />
-        </Suspense>
       </div>
 
       {/* Recent Detections Section */}

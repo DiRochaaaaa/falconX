@@ -72,6 +72,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Buscar configuração de triggers do usuário (NOVA IMPLEMENTAÇÃO)
+    const { data: triggerConfig, error: triggerError } = await supabaseAdmin
+      .from('user_trigger_configs')
+      .select('trigger_params')
+      .eq('user_id', userId)
+      .single()
+
+    if (triggerError && triggerError.code !== 'PGRST116') {
+      logger.error('Erro ao buscar configuração de triggers', new Error(triggerError.message))
+      return NextResponse.json({ error: 'Erro interno' }, { status: 500, headers: corsHeaders })
+    }
+
+    // Se não tem configuração de triggers, usar padrão
+    const triggerParams = triggerConfig?.trigger_params || { fbclid: true }
+
     // Executar primeira ação ativa (pode ser expandido para múltiplas ações)
     const action = actions[0]
 
@@ -88,12 +103,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar triggers (fbclid, gclid, etc.)
-    const triggerParams = action.trigger_params || {}
-
     // Verificar triggers tanto no referrer quanto na currentUrl
     let hasRequiredTrigger = false
 
+    // Só executar se houver pelo menos um trigger habilitado
     if (Object.values(triggerParams).some(Boolean)) {
       // Verificar no referrer (se existir)
       if (referrer) {
@@ -120,17 +133,16 @@ export async function POST(request: NextRequest) {
           // Ignorar erros de URL inválida
         }
       }
-    } else {
-      // Se não há triggers configurados, sempre executar
-      hasRequiredTrigger = true
     }
 
-    // Se tem triggers configurados mas nenhum foi encontrado, não executar
-    if (Object.values(triggerParams).some(Boolean) && !hasRequiredTrigger) {
+    // Se não há triggers habilitados OU nenhum trigger foi encontrado, não executar
+    if (!Object.values(triggerParams).some(Boolean) || !hasRequiredTrigger) {
       return NextResponse.json(
         {
           action: 'skip',
-          message: 'Triggers não encontrados na URL',
+          message: !Object.values(triggerParams).some(Boolean)
+            ? 'Nenhum trigger configurado'
+            : 'Triggers não encontrados na URL',
         },
         { headers: corsHeaders }
       )

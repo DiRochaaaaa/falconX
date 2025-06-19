@@ -13,255 +13,229 @@ export interface UserProfile extends User {
 
 // Parâmetros de tracking completos para diferentes plataformas de ads
 export interface TriggerParam {
-  key: string
   name: string
-  description: string
-  platform: string
-  category: 'facebook' | 'google' | 'utm' | 'tiktok' | 'twitter' | 'linkedin' | 'youtube' | 'other'
+  label: string
   enabled: boolean
+  platform: 'facebook' | 'google' | 'tiktok' | 'taboola' | 'generic'
+  description: string
 }
 
-export const DEFAULT_TRIGGER_PARAMS: TriggerParam[] = [
-  // Facebook/Meta Ads
+export const TRIGGER_PARAMS: TriggerParam[] = [
+  // Facebook Ads
   {
-    key: 'fbclid',
-    name: 'Facebook Click ID',
-    description: 'Identificador de clique do Facebook Ads',
-    platform: 'Facebook',
-    category: 'facebook',
+    name: 'fbclid',
+    label: 'Facebook Click ID',
     enabled: true,
+    platform: 'facebook',
+    description: 'Identificador único do clique no Facebook',
   },
   {
-    key: 'fb_action_ids',
-    name: 'Facebook Action IDs',
-    description: 'IDs de ação do Facebook',
-    platform: 'Facebook',
-    category: 'facebook',
-    enabled: false,
+    name: 'fb_action_ids',
+    label: 'Facebook Action IDs',
+    enabled: true,
+    platform: 'facebook',
+    description: 'IDs das ações no Facebook',
   },
   {
-    key: 'fb_action_types',
-    name: 'Facebook Action Types',
-    description: 'Tipos de ação do Facebook',
-    platform: 'Facebook',
-    category: 'facebook',
-    enabled: false,
+    name: 'fb_action_types',
+    label: 'Facebook Action Types',
+    enabled: true,
+    platform: 'facebook',
+    description: 'Tipos de ações no Facebook',
   },
   {
-    key: 'fb_source',
-    name: 'Facebook Source',
-    description: 'Fonte do Facebook',
-    platform: 'Facebook',
-    category: 'facebook',
-    enabled: false,
+    name: 'fb_source',
+    label: 'Facebook Source',
+    enabled: true,
+    platform: 'facebook',
+    description: 'Fonte do tráfego do Facebook',
   },
 
   // Google Ads
   {
-    key: 'gclid',
-    name: 'Google Click ID',
-    description: 'Identificador de clique do Google Ads',
-    platform: 'Google',
-    category: 'google',
+    name: 'gclid',
+    label: 'Google Click ID',
     enabled: true,
+    platform: 'google',
+    description: 'Identificador único do clique no Google',
   },
   {
-    key: 'gclsrc',
-    name: 'Google Click Source',
-    description: 'Fonte do clique do Google',
-    platform: 'Google',
-    category: 'google',
-    enabled: false,
+    name: 'gclsrc',
+    label: 'Google Click Source',
+    enabled: true,
+    platform: 'google',
+    description: 'Fonte do clique no Google',
   },
   {
-    key: 'dclid',
-    name: 'Display Click ID',
-    description: 'ID de clique do Google Display',
-    platform: 'Google',
-    category: 'google',
-    enabled: false,
+    name: 'gbraid',
+    label: 'Google Brand ID',
+    enabled: true,
+    platform: 'google',
+    description: 'Identificador de marca do Google',
   },
   {
-    key: 'wbraid',
-    name: 'Web Conversion ID',
-    description: 'ID de conversão web do Google',
-    platform: 'Google',
-    category: 'google',
-    enabled: false,
+    name: 'wbraid',
+    label: 'Google Web Brand ID',
+    enabled: true,
+    platform: 'google',
+    description: 'Identificador de marca web do Google',
   },
   {
-    key: 'gbraid',
-    name: 'Google Ads Conversion ID',
-    description: 'ID de conversão do Google Ads',
-    platform: 'Google',
-    category: 'google',
-    enabled: false,
+    name: 'dclid',
+    label: 'Display Click ID',
+    enabled: true,
+    platform: 'google',
+    description: 'ID do clique em display do Google',
   },
 
   // UTM Parameters (Universal)
   {
-    key: 'utm_source',
-    name: 'UTM Source',
+    name: 'utm_source',
+    label: 'UTM Source',
+    enabled: true,
+    platform: 'generic',
     description: 'Fonte da campanha (ex: google, facebook)',
-    platform: 'Universal',
-    category: 'utm',
-    enabled: true,
   },
   {
-    key: 'utm_medium',
-    name: 'UTM Medium',
-    description: 'Meio da campanha (ex: cpc, social)',
-    platform: 'Universal',
-    category: 'utm',
+    name: 'utm_medium',
+    label: 'UTM Medium',
     enabled: true,
+    platform: 'generic',
+    description: 'Meio da campanha (ex: cpc, email)',
   },
   {
-    key: 'utm_campaign',
-    name: 'UTM Campaign',
+    name: 'utm_campaign',
+    label: 'UTM Campaign',
+    enabled: true,
+    platform: 'generic',
     description: 'Nome da campanha',
-    platform: 'Universal',
-    category: 'utm',
+  },
+  {
+    name: 'utm_term',
+    label: 'UTM Term',
     enabled: true,
+    platform: 'generic',
+    description: 'Palavras-chave da campanha',
   },
   {
-    key: 'utm_term',
-    name: 'UTM Term',
-    description: 'Termo da palavra-chave',
-    platform: 'Universal',
-    category: 'utm',
-    enabled: false,
-  },
-  {
-    key: 'utm_content',
-    name: 'UTM Content',
-    description: 'Conteúdo do anúncio',
-    platform: 'Universal',
-    category: 'utm',
-    enabled: false,
+    name: 'utm_content',
+    label: 'UTM Content',
+    enabled: true,
+    platform: 'generic',
+    description: 'Conteúdo específico do anúncio',
   },
 
   // TikTok Ads
   {
-    key: 'ttclid',
-    name: 'TikTok Click ID',
-    description: 'Identificador de clique do TikTok Ads',
-    platform: 'TikTok',
-    category: 'tiktok',
+    name: 'ttclid',
+    label: 'TikTok Click ID',
     enabled: true,
+    platform: 'tiktok',
+    description: 'Identificador único do clique no TikTok',
   },
   {
-    key: 'tt_content',
-    name: 'TikTok Content',
-    description: 'Conteúdo do TikTok',
-    platform: 'TikTok',
-    category: 'tiktok',
-    enabled: false,
-  },
-
-  // Twitter/X Ads
-  {
-    key: 'twclid',
-    name: 'Twitter Click ID',
-    description: 'Identificador de clique do Twitter Ads',
-    platform: 'Twitter/X',
-    category: 'twitter',
-    enabled: false,
+    name: 'tt_content',
+    label: 'TikTok Content',
+    enabled: true,
+    platform: 'tiktok',
+    description: 'Conteúdo específico do TikTok',
   },
 
-  // LinkedIn Ads
+  // Twitter/X
   {
-    key: 'li_fat_id',
-    name: 'LinkedIn First-Party Ad Tracking',
-    description: 'Rastreamento de anúncio próprio do LinkedIn',
-    platform: 'LinkedIn',
-    category: 'linkedin',
-    enabled: false,
-  },
-  {
-    key: 'lipi',
-    name: 'LinkedIn Page Impression',
-    description: 'Impressão de página do LinkedIn',
-    platform: 'LinkedIn',
-    category: 'linkedin',
-    enabled: false,
+    name: 'twclid',
+    label: 'Twitter Click ID',
+    enabled: true,
+    platform: 'generic',
+    description: 'Identificador único do clique no Twitter',
   },
 
-  // YouTube Ads
+  // LinkedIn
   {
-    key: 'ytclid',
-    name: 'YouTube Click ID',
-    description: 'Identificador de clique do YouTube Ads',
-    platform: 'YouTube',
-    category: 'youtube',
-    enabled: false,
+    name: 'li_fat_id',
+    label: 'LinkedIn Fat ID',
+    enabled: true,
+    platform: 'generic',
+    description: 'Identificador do LinkedIn',
+  },
+  {
+    name: 'lipi',
+    label: 'LinkedIn Insight',
+    enabled: true,
+    platform: 'generic',
+    description: 'Parâmetro de insight do LinkedIn',
   },
 
-  // Outros parâmetros comuns
+  // YouTube
   {
-    key: 'ref',
-    name: 'Referrer',
-    description: 'Parâmetro de referência genérico',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
+    name: 'ytclid',
+    label: 'YouTube Click ID',
+    enabled: true,
+    platform: 'google',
+    description: 'Identificador único do clique no YouTube',
+  },
+
+  // Taboola
+  {
+    name: 'placement_id',
+    label: 'Placement ID',
+    enabled: true,
+    platform: 'taboola',
+    description: 'ID do posicionamento do anúncio',
   },
   {
-    key: 'source',
-    name: 'Source',
-    description: 'Fonte genérica',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
+    name: 'creative_id',
+    label: 'Creative ID',
+    enabled: true,
+    platform: 'taboola',
+    description: 'ID do criativo do anúncio',
+  },
+
+  // Genéricos
+  {
+    name: 'source',
+    label: 'Source',
+    enabled: true,
+    platform: 'generic',
+    description: 'Fonte genérica do tráfego',
   },
   {
-    key: 'medium',
-    name: 'Medium',
-    description: 'Meio genérico',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
+    name: 'medium',
+    label: 'Medium',
+    enabled: true,
+    platform: 'generic',
+    description: 'Meio genérico do tráfego',
   },
   {
-    key: 'campaign',
-    name: 'Campaign',
+    name: 'campaign',
+    label: 'Campaign',
+    enabled: true,
+    platform: 'generic',
     description: 'Campanha genérica',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
   },
   {
-    key: 'ad_id',
-    name: 'Ad ID',
-    description: 'ID do anúncio genérico',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
+    name: 'ad_id',
+    label: 'Ad ID',
+    enabled: true,
+    platform: 'generic',
+    description: 'ID genérico do anúncio',
   },
   {
-    key: 'creative_id',
-    name: 'Creative ID',
-    description: 'ID do criativo',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
-  },
-  {
-    key: 'placement_id',
-    name: 'Placement ID',
-    description: 'ID do posicionamento',
-    platform: 'Generic',
-    category: 'other',
-    enabled: false,
+    name: 'ref',
+    label: 'Referrer',
+    enabled: true,
+    platform: 'generic',
+    description: 'Parâmetro de referência genérico',
   },
 ]
 
 export interface ActionData {
   id: number
   user_id: string
+  clone_id?: number
   action_type: 'redirect_traffic' | 'blank_page' | 'custom_message'
   redirect_url?: string
   redirect_percentage: number
-  trigger_params: Record<string, boolean>
   is_active: boolean
   created_at: string
   updated_at: string

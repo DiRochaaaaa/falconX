@@ -259,20 +259,27 @@ export function useRecentDetections(userId: string) {
         throw new Error('User ID required')
       }
 
-      const { data } = await supabase
+      // Buscar clones únicos (sem duplicação) ordenados por última detecção
+      const { data, error } = await supabase
         .from('detected_clones')
         .select('*')
         .eq('user_id', userId)
         .order('last_seen', { ascending: false })
         .limit(5)
 
-      return (data || []).map(detection => ({
-        id: detection.id,
-        domain: detection.clone_domain || 'Domínio não identificado',
-        detected_at: detection.last_seen,
+      if (error) throw error
+
+      return (data || []).map(clone => ({
+        id: String(clone.id),
+        domain: clone.clone_domain || 'Domínio não identificado',
+        detected_at: clone.last_seen,
         action_taken: 'Clone Detectado',
-        user_agent: detection.user_agent || 'N/A',
-        ip_address: detection.ip_address || 'N/A',
+        user_agent: 'N/A', // Não disponível na tabela detected_clones
+        ip_address: 'N/A', // Não disponível na tabela detected_clones
+        slug_used: '/', // Página principal por padrão
+        visitor_count: clone.detection_count || 0,
+        session_duration: 0,
+        referrer_url: null,
       }))
     },
     userId,

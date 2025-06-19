@@ -548,6 +548,25 @@ export const Icons = {
     </svg>
   ),
 
+  // Raio/Zap
+  Zap: ({ className = 'h-5 w-5', size }: IconProps) => (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+      />
+    </svg>
+  ),
+
   // Plataformas
   Facebook: ({ className = 'h-5 w-5', size }: IconProps) => (
     <svg
@@ -629,6 +648,60 @@ export const Icons = {
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
       <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+    </svg>
+  ),
+
+  // Porcentagem
+  Percent: ({ className = 'h-5 w-5', size }: IconProps) => (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l-8 8" />
+      <circle cx="8" cy="8" r="2" />
+      <circle cx="16" cy="16" r="2" />
+    </svg>
+  ),
+
+  // Calendário
+  Calendar: ({ className = 'h-5 w-5', size }: IconProps) => (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  ),
+
+  // Editar
+  Edit: ({ className = 'h-5 w-5', size }: IconProps) => (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
     </svg>
   ),
 }
