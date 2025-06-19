@@ -30,7 +30,7 @@ O FalconX implementou um sistema revolucionário de **Script Loader** que substi
 ### **Agora (Script Loader)**
 
 ```html
-<script src="https://falconx.com/api/js/fx_a1b2c3d4e5f6.js" async defer></script>
+<script src="https://falconx.com/api/js/fx_a1b2c3d4e5f6" async defer></script>
 ```
 
 ## 🎯 Vantagens do Novo Sistema
@@ -75,7 +75,7 @@ O FalconX implementou um sistema revolucionário de **Script Loader** que substi
 ```mermaid
 graph TD
     A[Site do Usuário] --> B[Script Loader 80 bytes]
-    B --> C[GET /api/js/fx_abc123.js]
+    B --> C[GET /api/js/fx_abc123]
     C --> D[Script Ofuscado Dinâmico]
     D --> E[Execução no Browser]
     E --> F[POST /api/collect]
@@ -86,7 +86,7 @@ graph TD
 
 ### **Componentes**
 
-#### **1. Script Loader (`/api/js/[scriptId].js`)**
+#### **1. Script Loader (`/api/js/[scriptId]`)**
 
 - Gera script único por usuário
 - Valida scriptId com hash SHA256

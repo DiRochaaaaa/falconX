@@ -11,7 +11,7 @@ export function generateProtectionScript(userId: string, baseUrl: string): strin
   const scriptId = generateScriptId(userId)
 
   // Script loader super compacto - apenas 1 linha!
-  const loaderScript = `<script src="${baseUrl}/api/js/${scriptId}.js" async defer></script>`
+  const loaderScript = `<script src="${baseUrl}/api/js/${scriptId}" async defer></script>`
 
   return loaderScript
 }

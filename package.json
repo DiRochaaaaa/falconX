@@ -48,11 +48,11 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --fix --max-warnings 0 --cache",
+      "prettier --write --cache"
     ],
     "*.{json,css,md}": [
-      "prettier --write"
+      "prettier --write --cache"
     ]
   }
 }

@@ -46,7 +46,7 @@ Implementar um **Sistema de Script Loader** que substitui o script inline por:
 
 ```html
 <!-- Novo: Apenas 1 linha, parece analytics comum -->
-<script src="https://falconx.com/api/js/fx_a1b2c3d4e5f6.js" async defer></script>
+<script src="https://falconx.com/api/js/fx_a1b2c3d4e5f6" async defer></script>
 ```
 
 ## 🏗️ Alternativas Consideradas
