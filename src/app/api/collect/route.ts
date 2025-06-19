@@ -62,14 +62,19 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // Parse do body com parâmetros ofuscados
-    interface RequestBody {
-      uid: string // userId (codificado em Base64)
-      dom: string // currentDomain
-      url?: string // currentUrl
-      ref?: string // referrer
-      ua?: string // userAgent
-      ts?: string // timestamp
+    // Parse do body com suporte aos formatos antigo e novo
+    type RequestBody = {
+      uid?: string // userId (codificado em Base64) - formato novo
+      dom?: string // currentDomain - formato novo
+      scriptId?: string // formato antigo
+      domain?: string // formato antigo
+      url?: string
+      ref?: string // referrer (formato novo)
+      referrer?: string // referrer (formato antigo)
+      ua?: string // userAgent (formato novo)
+      userAgent?: string // userAgent (formato antigo)
+      ts?: string // timestamp (formato novo)
+      timestamp?: string // timestamp (formato antigo)
     }
 
     let body: RequestBody
@@ -79,9 +84,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400, headers: corsHeaders })
     }
 
-    const { uid, dom, url, ref, ua } = body
+    // Detectar formato e normalizar parâmetros
+    let uid: string, dom: string, url: string | undefined, ref: string | undefined, ua: string | undefined
 
-    if (!uid || !dom) {
+    if (body.uid && body.dom) {
+      // Formato novo (ofuscado)
+      uid = body.uid
+      dom = body.dom
+      url = body.url
+      ref = body.ref
+      ua = body.ua
+    } else if (body.scriptId && body.domain) {
+      // Formato antigo (compatibilidade)
+      const userId = body.scriptId.replace('fx_', '')
+      uid = Buffer.from(userId, 'utf-8').toString('base64')
+      dom = body.domain
+      url = body.url
+      ref = body.referrer
+      ua = body.userAgent
+    } else {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400, headers: corsHeaders }

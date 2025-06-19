@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Headers para cache e CORS
+// Headers para cache e CORS - SEM CACHE para evitar problemas de deploy
 const scriptHeaders = {
   'Content-Type': 'application/javascript; charset=utf-8',
-  'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+  'Cache-Control': 'no-cache, no-store, must-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET',
   'Access-Control-Allow-Headers': 'Content-Type',
