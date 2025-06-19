@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import { checkCloneLimits } from './check-clone-limits'
 
 export interface DetectedClone {
@@ -25,8 +25,11 @@ export async function getAllDetectedClones(userId: string): Promise<{
     // Buscar status dos limites
     const limitStatus = await checkCloneLimits(userId)
     
+    // Usar cliente administrativo para bypassar RLS
+    const adminClient = supabaseAdmin || supabase
+    
     // Buscar TODOS os clones detectados
-    const { data: allClones, error } = await supabase
+    const { data: allClones, error } = await adminClient
       .from('detected_clones')
       .select('*')
       .eq('user_id', userId)

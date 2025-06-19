@@ -1,18 +1,16 @@
 'use client'
 
+import React, { useState, Suspense, lazy, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useDashboardStats, useRecentDetections } from '@/hooks/useDataCache'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
-import { useState, Suspense, lazy, useEffect } from 'react'
 import PlanLimitStatus from '@/components/dashboard/PlanLimitStatus'
 import BlockedClonesAlert from '@/components/dashboard/BlockedClonesAlert'
 import { getPlanInfo } from '@/lib/plan-utils'
 
 // Modular imports
 import {
-  Section,
   User,
   DashboardUser,
   LoadingSkeleton,
@@ -207,64 +205,202 @@ function DashboardSection({ user, profile, usage }: { user: User | null; profile
 }
 
 export default function Dashboard() {
-  const { user, profile, usage } = useAuth()
-  const [activeSection, setActiveSection] = useState<Section>('dashboard')
+  const { user, profile, usage, loading, initialized, error } = useAuth()
+  const [activeSection, setActiveSection] = useState('dashboard')
 
   const handleSectionChange = (section: string) => {
-    setActiveSection(section as Section)
+    setActiveSection(section)
   }
 
+  // Loading state mais robusto
+  if (!initialized || (loading && !user)) {
+    return (
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <div className="glass rounded-xl p-8 text-center">
+          <div className="mb-4">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-green-500/20 border-t-green-500"></div>
+          </div>
+          <h2 className="text-xl font-semibold text-white">Inicializando...</h2>
+          <p className="text-gray-400">Configurando seu dashboard</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state mais robusto
+  if (error && !user) {
+    return (
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <div className="glass rounded-xl p-8 text-center max-w-md">
+          <div className="mb-4">
+            <Icons.Warning className="mx-auto h-12 w-12 text-red-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Erro de Autenticação</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn-primary"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect to login se não tem usuário
+  if (initialized && !user) {
+    return (
+      <div className="bg-gradient-main flex min-h-screen items-center justify-center">
+        <div className="glass rounded-xl p-8 text-center">
+          <h2 className="text-xl font-semibold text-white mb-2">Acesso Negado</h2>
+          <p className="text-gray-400 mb-4">Você precisa fazer login para acessar esta página</p>
+          <button 
+            onClick={() => window.location.href = '/login'} 
+            className="btn-primary"
+          >
+            Fazer Login
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Warning se tem usuário mas não conseguiu carregar perfil completo
+  const hasPartialData = user && (!profile || !usage)
+
   const renderSection = () => {
-    const sectionProps = { user, profile }
+    // Props seguras para todos os componentes
+    const safeProps = {
+      user: user,
+      profile: profile || null,
+      usage: usage || null,
+      loading: loading,
+      error: error
+    }
 
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardSection {...sectionProps} usage={usage} />
+        return <DashboardSection {...safeProps} />
       case 'domains':
         return (
-          <Suspense fallback={<LoadingSkeleton className="h-96" />}>
-            <DomainsSection {...sectionProps} />
+          <Suspense fallback={<LoadingSkeleton />}>
+            <DomainsSection user={safeProps.user} profile={safeProps.profile} />
           </Suspense>
         )
       case 'scripts':
         return (
-          <Suspense fallback={<LoadingSkeleton className="h-96" />}>
-            <ScriptsSection {...sectionProps} />
+          <Suspense fallback={<LoadingSkeleton />}>
+            <ScriptsSection user={safeProps.user} profile={safeProps.profile} />
           </Suspense>
         )
       case 'actions':
-        return user ? <ActionsSection user={user} /> : <LoadingSkeleton className="h-96" />
+        return safeProps.user ? (
+          <ActionsSection user={safeProps.user} />
+        ) : (
+          <div className="glass rounded-xl p-8 text-center">
+            <h2 className="text-xl font-semibold text-white mb-2">Ações</h2>
+            <p className="text-gray-400">Carregando dados do usuário...</p>
+          </div>
+        )
       case 'profile':
         return (
-          <Suspense fallback={<LoadingSkeleton className="h-96" />}>
-            <ProfileSection {...sectionProps} />
+          <Suspense fallback={<LoadingSkeleton />}>
+            <ProfileSection user={safeProps.user} profile={safeProps.profile} />
           </Suspense>
         )
       case 'settings':
         return (
-          <Suspense fallback={<LoadingSkeleton className="h-96" />}>
+          <Suspense fallback={<LoadingSkeleton />}>
             <SettingsSection />
           </Suspense>
         )
       case 'billing':
         return (
-          <Suspense fallback={<LoadingSkeleton className="h-96" />}>
-            <BillingSection profile={profile} />
+          <Suspense fallback={<LoadingSkeleton />}>
+            <BillingSection profile={safeProps.profile} />
           </Suspense>
         )
       default:
-        return <DashboardSection {...sectionProps} usage={usage} />
+        return <DashboardSection {...safeProps} />
     }
   }
 
   return (
-    <ProtectedRoute>
-      <div className="bg-gradient-main min-h-screen">
-        <Navigation activeSection={activeSection} onSectionChange={handleSectionChange} />
-        <main className="mx-auto max-w-7xl px-4 py-8 transition-all duration-300 ease-in-out sm:px-6 lg:px-8">
+    <div className="bg-gradient-main min-h-screen">
+      <Navigation activeSection={activeSection} onSectionChange={handleSectionChange} />
+      
+      {/* Warning para dados parciais */}
+      {hasPartialData && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="glass-strong rounded-lg p-4 border-l-4 border-yellow-500">
+            <div className="flex items-center">
+              <Icons.Warning className="h-5 w-5 text-yellow-500 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-200">
+                  Dados Carregados Parcialmente
+                </h3>
+                <p className="text-xs text-yellow-300 mt-1">
+                  Algumas informações podem não estar atualizadas. {error}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorBoundary>
           {renderSection()}
-        </main>
-      </div>
-    </ProtectedRoute>
+        </ErrorBoundary>
+      </main>
+    </div>
   )
+}
+
+// Componente de Error Boundary simples
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Dashboard Error Boundary:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+                 <div className="glass rounded-xl p-8 text-center">
+           <Icons.Warning className="mx-auto h-12 w-12 text-red-500 mb-4" />
+           <h2 className="text-xl font-semibold text-white mb-2">Algo deu errado</h2>
+           <p className="text-gray-400 mb-4">
+             Ocorreu um erro inesperado nesta seção do dashboard.
+           </p>
+           <button 
+             onClick={() => this.setState({ hasError: false })}
+             className="btn-primary mr-2"
+           >
+             Tentar Novamente
+           </button>
+           <button 
+             onClick={() => window.location.reload()}
+             className="btn-ghost"
+           >
+             Recarregar Página
+           </button>
+         </div>
+      )
+    }
+
+    return this.props.children
+  }
 }

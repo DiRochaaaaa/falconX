@@ -135,10 +135,10 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
                   </div>
                   <div className="text-left">
                     <div className="text-sm font-medium text-white">
-                      {profile?.full_name || profile?.email}
+                      {profile?.full_name || profile?.email || 'Usuário'}
                     </div>
-                    <div className="px-4 py-2 text-sm text-gray-500 border-b">
-                      {profile?.plan?.slug ?? 'free'}
+                    <div className="text-xs text-gray-400 capitalize">
+                      Plano {profile?.plan?.name || 'Gratuito'}
                     </div>
                   </div>
                   <svg

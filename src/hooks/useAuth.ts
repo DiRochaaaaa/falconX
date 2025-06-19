@@ -45,7 +45,23 @@ export function useAuth() {
       if (!mountedRef.current) return null
 
       try {
-        const profileWithPlan = await getUserPlanInfo(userId)
+        // Aplicar limite de tentativas para evitar loops infinitos
+        const maxRetries = 3
+        let attempt = 0
+        let profileWithPlan: ProfileWithPlan | null = null
+
+        while (attempt < maxRetries && !profileWithPlan) {
+          attempt++
+          console.log(`Tentativa ${attempt}/${maxRetries} de carregar perfil do usuário ${userId}`)
+          
+          profileWithPlan = await getUserPlanInfo(userId)
+          
+          if (!profileWithPlan && attempt < maxRetries) {
+            // Aguardar 1 segundo antes de tentar novamente
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        }
+
         if (profileWithPlan) {
           // Calcular usage baseado nos dados do plano
           const currentClones = profileWithPlan.subscription.current_clone_count + profileWithPlan.subscription.extra_clones_used
@@ -84,13 +100,32 @@ export function useAuth() {
             lastUpdated: new Date().toISOString(),
           }
 
-          updateAuthState({ profile: profileWithPlan, usage, error: null })
+          updateAuthState({ 
+            profile: profileWithPlan, 
+            usage, 
+            error: null,
+            loading: false 
+          })
           return profileWithPlan
+        } else {
+          // Se não conseguiu carregar após todas as tentativas
+          console.error(`Falha ao carregar perfil após ${maxRetries} tentativas`)
+          updateAuthState({ 
+            profile: null, 
+            usage: null, 
+            error: 'Erro ao carregar perfil do usuário',
+            loading: false 
+          })
+          return null
         }
-        return null
       } catch (error) {
         console.error('Error loading user profile:', error)
-        updateAuthState({ profile: null, usage: null, error: 'Erro ao carregar perfil' })
+        updateAuthState({ 
+          profile: null, 
+          usage: null, 
+          error: 'Erro ao carregar perfil',
+          loading: false 
+        })
         return null
       }
     },
@@ -208,23 +243,60 @@ export function useAuth() {
 
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        updateAuthState({ loading: true, error: null })
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (!mounted) return
 
-        if (session?.user) {
-          updateAuthState({ user: session.user })
-          await loadUserProfile(session.user.id, session.user.email || undefined)
+        if (sessionError) {
+          console.error('Erro ao obter sessão:', sessionError)
+          updateAuthState({ 
+            loading: false, 
+            initialized: true, 
+            error: 'Erro ao verificar autenticação' 
+          })
+          return
         }
 
-        updateAuthState({ loading: false, initialized: true })
+        if (session?.user) {
+          console.log('Usuário encontrado na sessão:', session.user.id)
+          updateAuthState({ user: session.user, loading: true })
+          
+          // Carregar perfil com timeout de segurança
+          const profilePromise = loadUserProfile(session.user.id, session.user.email || undefined)
+          const timeoutPromise = new Promise<null>((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout ao carregar perfil')), 10000) // 10 segundos
+          })
+
+          try {
+            await Promise.race([profilePromise, timeoutPromise])
+          } catch (profileError) {
+            console.error('Erro ou timeout ao carregar perfil:', profileError)
+            // Continuar mesmo se não conseguir carregar o perfil
+            updateAuthState({ 
+              loading: false,
+              error: 'Perfil carregado parcialmente'
+            })
+          }
+        } else {
+          console.log('Nenhuma sessão ativa encontrada')
+          updateAuthState({ 
+            user: null,
+            profile: null,
+            usage: null,
+            loading: false 
+          })
+        }
+
+        updateAuthState({ initialized: true })
       } catch (error) {
-        console.error('Erro na inicialização:', error)
+        console.error('Erro crítico na inicialização:', error)
         if (mounted) {
           updateAuthState({ 
             loading: false, 
             initialized: true, 
-            error: 'Erro na inicialização' 
+            error: 'Erro na inicialização do sistema' 
           })
         }
       }
@@ -242,11 +314,15 @@ export function useAuth() {
           // [APLICANDO CORREÇÃO SUPABASE BUG] - usar setTimeout para evitar deadlock
           setTimeout(async () => {
             if (mounted) {
+              console.log('Carregando perfil após mudança de auth state:', session.user.id)
+              updateAuthState({ loading: true })
               await loadUserProfile(session.user.id, session.user.email || undefined)
             }
           }, 0)
         } else {
+          console.log('Usuário deslogado, limpando estado')
           updateAuthState({ 
+            user: null,
             profile: null, 
             usage: null,
             loading: false 

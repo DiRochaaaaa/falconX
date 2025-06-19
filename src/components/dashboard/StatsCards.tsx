@@ -115,6 +115,21 @@ function StatCard({
 }
 
 export default function StatsCards({ stats, loading, planLimits }: StatsCardsProps) {
+  // Garantir que planLimits sempre tenha valores válidos
+  const safePlanLimits = {
+    clones: planLimits?.clones || 1,
+    domains: planLimits?.domains || 1,
+    price: planLimits?.price || 0
+  }
+
+  // Garantir que stats tenha valores válidos
+  const safeStats = {
+    allowedDomains: stats?.allowedDomains || 0,
+    detectedClones: stats?.detectedClones || 0,
+    uniqueVisitors: stats?.uniqueVisitors || 0,
+    activeActions: stats?.activeActions || 0
+  }
+
   return (
     <>
       <StatCard
@@ -123,40 +138,40 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
         value={
           loading
             ? '...'
-            : planLimits.domains === -1 
-              ? `${stats?.allowedDomains || 0}` 
-              : `${stats?.allowedDomains || 0}/${planLimits.domains}`
+            : safePlanLimits.domains === -1 
+              ? `${safeStats.allowedDomains}` 
+              : `${safeStats.allowedDomains}/${safePlanLimits.domains}`
         }
         loading={loading}
         color="green"
-        subtitle={planLimits.domains === -1 ? 'Ilimitado' : `Limite: ${planLimits.domains} domínios`}
+        subtitle={safePlanLimits.domains === -1 ? 'Ilimitado' : `Limite: ${safePlanLimits.domains} domínios`}
         trend="neutral"
       />
 
       <StatCard
         icon={Icons.Warning}
         title="Clones Detectados"
-        value={loading ? '...' : `${stats?.detectedClones || 0}/${planLimits.clones}`}
+        value={loading ? '...' : `${safeStats.detectedClones}/${safePlanLimits.clones}`}
         loading={loading}
         color="red"
-        subtitle={`Limite: ${planLimits.clones} clones/mês`}
-        trend={stats?.detectedClones && stats.detectedClones > 0 ? 'up' : 'neutral'}
+        subtitle={`Limite: ${safePlanLimits.clones} clones/mês`}
+        trend={safeStats.detectedClones > 0 ? 'up' : 'neutral'}
       />
 
       <StatCard
         icon={Icons.User}
         title="Visitantes Únicos"
-        value={loading ? '...' : stats?.uniqueVisitors || 0}
+        value={loading ? '...' : safeStats.uniqueVisitors}
         loading={loading}
         color="orange"
         subtitle="Nas páginas clonadas"
-        trend={stats?.uniqueVisitors && stats.uniqueVisitors > 0 ? 'up' : 'neutral'}
+        trend={safeStats.uniqueVisitors > 0 ? 'up' : 'neutral'}
       />
 
       <StatCard
         icon={Icons.Lightning}
         title="Ações Ativas"
-        value={loading ? '...' : stats?.activeActions || 0}
+        value={loading ? '...' : safeStats.activeActions}
         loading={loading}
         color="blue"
         subtitle="Configurações ativas"

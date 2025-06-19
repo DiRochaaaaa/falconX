@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 export interface CloneLimitResult {
   canDetectClone: boolean
@@ -12,8 +12,11 @@ export interface CloneLimitResult {
 
 export async function checkCloneLimits(userId: string): Promise<CloneLimitResult> {
   try {
+    // Usar cliente administrativo para bypassar RLS
+    const adminClient = supabaseAdmin || supabase
+    
     // Buscar subscription do usuário com informações do plano
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subError } = await adminClient
       .from('user_subscriptions')
       .select(`
         *,
@@ -53,7 +56,7 @@ export async function checkCloneLimits(userId: string): Promise<CloneLimitResult
       const nextResetDate = new Date(now)
       nextResetDate.setMonth(nextResetDate.getMonth() + 1)
       
-      const { error: resetError } = await supabase
+      const { error: resetError } = await adminClient
         .from('user_subscriptions')
         .update({
           current_clone_count: 0,
@@ -103,8 +106,11 @@ export async function checkCloneLimits(userId: string): Promise<CloneLimitResult
 
 export async function incrementCloneCount(userId: string): Promise<void> {
   try {
+    // Usar cliente administrativo para bypassar RLS
+    const adminClient = supabaseAdmin || supabase
+    
     // Buscar subscription atual
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subError } = await adminClient
       .from('user_subscriptions')
       .select(`
         *,
@@ -135,7 +141,7 @@ export async function incrementCloneCount(userId: string): Promise<void> {
     }
     // Plano free no limite: não incrementa nada (já salva o clone mas não conta)
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from('user_subscriptions')
       .update(updateData)
       .eq('id', subscription.id)

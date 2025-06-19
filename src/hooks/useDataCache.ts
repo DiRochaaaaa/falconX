@@ -273,30 +273,53 @@ export function useRecentDetections(userId: string) {
         throw new Error('User ID required')
       }
 
-      // Buscar clones únicos (sem duplicação) ordenados por última detecção
-      const { data, error } = await supabase
-        .from('detected_clones')
-        .select('*, slugs_data')
-        .eq('user_id', userId)
-        .order('last_seen', { ascending: false })
-        .limit(5)
+      // Usar get-all-detected-clones que implementa a lógica de limitação
+      const { getAllDetectedClones } = await import('@/modules/dashboard/application/use-cases/get-all-detected-clones')
+      const result = await getAllDetectedClones(userId)
 
-      if (error) throw error
-
-      return (data || []).map(clone => ({
+      // Retornar apenas os clones dentro do limite + um resumo dos bloqueados
+      const detections = result.clones.map(clone => ({
         id: String(clone.id),
         domain: clone.clone_domain || 'Domínio não identificado',
         detected_at: clone.last_seen,
-        action_taken: 'Clone Detectado',
-        user_agent: 'N/A', // Não disponível na tabela detected_clones
-        ip_address: 'N/A', // Não disponível na tabela detected_clones
-        slug_used: '/', // Página principal por padrão
+        action_taken: clone.is_within_limit ? 'Clone Detectado' : 'Clone Bloqueado',
+        user_agent: 'N/A',
+        ip_address: 'N/A', 
+        slug_used: '/',
         visitor_count: clone.detection_count || 0,
         unique_visitors: clone.unique_visitors_count || 0,
         slugs_data: clone.slugs_data || [],
         session_duration: 0,
         referrer_url: null,
+        is_within_limit: clone.is_within_limit,
+        is_blocked: clone.is_blocked,
       }))
+
+      // Mostrar clones dentro do limite + um alerta resumido dos bloqueados
+      const withinLimit = detections.filter(d => d.is_within_limit)
+      const blocked = detections.filter(d => d.is_blocked)
+
+      // Se tem clones bloqueados, adicionar uma entrada especial de aviso
+      if (blocked.length > 0) {
+                 withinLimit.push({
+           id: 'blocked-alert',
+           domain: `⚠️ ${blocked.length} clone(s) adicional(is) bloqueado(s)`,
+           detected_at: blocked[0]?.detected_at || new Date().toISOString(),
+           action_taken: 'Upgrade Necessário',
+           user_agent: 'N/A',
+           ip_address: 'N/A',
+           slug_used: '/upgrade',
+           visitor_count: blocked.reduce((sum, b) => sum + (b.visitor_count || 0), 0),
+           unique_visitors: blocked.reduce((sum, b) => sum + (b.unique_visitors || 0), 0),
+           slugs_data: [],
+           session_duration: 0,
+           referrer_url: null,
+           is_within_limit: false,
+           is_blocked: false,
+         })
+      }
+
+      return withinLimit.slice(0, 5) // Limitar a 5 itens
     },
     userId,
     {

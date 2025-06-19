@@ -29,6 +29,35 @@ interface RecentDetectionsProps {
 }
 
 function DetectionItem({ detection }: { detection: Detection }) {
+  // Detecção especial de aviso de bloqueio
+  if (detection.id === 'blocked-alert') {
+    return (
+      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <div className="rounded-lg bg-yellow-500/20 p-1.5">
+              <Icons.Warning className="h-4 w-4 text-yellow-400" />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium text-yellow-300">{detection.domain}</p>
+                <div className="flex items-center space-x-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-yellow-400"></div>
+                  <span className="text-xs font-medium text-yellow-400">BLOQUEADO</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-1 text-xs text-yellow-300">
+              Upgrade seu plano para detectar e monitorar estes clones adicionais
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()

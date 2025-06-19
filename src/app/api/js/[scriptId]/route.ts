@@ -75,29 +75,31 @@ async function generateBasicScript(scriptId: string): Promise<string> {
   console.log('FalconX Script Loaded - ID: ${scriptId}');
   
   // Detectar clone
-  fetch('${baseUrl}/api/collect', {
+  fetch('${baseUrl}/api/detect', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      uid: btoa('${userId}'), // userId em Base64
-      dom: location.hostname, // domain -> dom
-      url: location.href,
-      ref: document.referrer, // referrer -> ref
-      ua: navigator.userAgent, // userAgent -> ua
-      ts: new Date().toISOString() // timestamp -> ts
+      userId: '${userId}',
+      currentDomain: location.hostname,
+      currentUrl: location.href,
+      referrer: document.referrer,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString()
     })
   }).then(response => response.json())
   .then(data => {
-    if (data.status === 'detected') {
+    if (data.status === 'clone_detected') {
       console.log('Clone detected, executing action...');
       // Executar ação
-      fetch('${baseUrl}/api/process', {
+      fetch('${baseUrl}/api/execute-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uid: btoa('${userId}'), // userId em Base64
-          dom: location.hostname, // domain -> dom
-          url: location.href
+          userId: '${userId}',
+          cloneDomain: location.hostname,
+          currentUrl: location.href,
+          userAgent: navigator.userAgent,
+          referrer: document.referrer
         })
       }).then(response => response.json())
       .then(actionData => {
