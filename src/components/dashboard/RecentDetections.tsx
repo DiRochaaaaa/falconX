@@ -1,6 +1,7 @@
 'use client'
 
 import { Icons } from '@/components/Icons'
+import { useState } from 'react'
 
 interface SlugData {
   slug: string
@@ -29,6 +30,8 @@ interface RecentDetectionsProps {
 }
 
 function DetectionItem({ detection }: { detection: Detection }) {
+  const [showAllSlugs, setShowAllSlugs] = useState(false)
+
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -83,6 +86,17 @@ function DetectionItem({ detection }: { detection: Detection }) {
       }
     }
   }
+
+  // Função para abrir a página do clonador com a slug específica
+  const openCloneUrl = (slug: string) => {
+    const cloneUrl = `https://${detection.domain}${slug}`
+    window.open(cloneUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  // Determinar quantas slugs mostrar
+  const slugsToShow = showAllSlugs 
+    ? detection.slugs_data || []
+    : detection.slugs_data?.slice(0, 3) || []
 
   return (
     <div className="group rounded-lg border border-gray-700/50 bg-gray-800/30 p-3 transition-all duration-200 hover:border-red-500/30 hover:bg-gray-800/50">
@@ -143,29 +157,59 @@ function DetectionItem({ detection }: { detection: Detection }) {
             </div>
           </div>
 
-          {/* Slugs compactas */}
+          {/* Slugs clicáveis */}
           {detection.slugs_data && detection.slugs_data.length > 0 && (
-            <div className="mt-2">
-              <div className="flex flex-wrap gap-1">
-                {detection.slugs_data.slice(0, 3).map((slugData, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center space-x-1 rounded bg-gray-700/50 px-2 py-1 text-xs"
-                  >
-                    <code className="font-mono text-blue-300">{slugData.slug}</code>
-                    <span className="text-gray-400">•</span>
-                    <span className="font-semibold text-blue-300">{slugData.unique_visitors}</span>
-                    <span className="text-gray-500">únicos</span>
-                    <span className="text-gray-600">/</span>
-                    <span className="text-green-300">{slugData.total_visits}</span>
-                  </div>
-                ))}
+            <div className="mt-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">
+                  Páginas detectadas ({detection.slugs_data.length})
+                </span>
                 {detection.slugs_data.length > 3 && (
-                  <div className="flex items-center rounded bg-gray-700/30 px-2 py-1 text-xs text-gray-400">
-                    +{detection.slugs_data.length - 3} mais
-                  </div>
+                  <button
+                    onClick={() => setShowAllSlugs(!showAllSlugs)}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                  >
+                    {showAllSlugs ? 'Mostrar menos' : 'Ver todas'}
+                  </button>
                 )}
               </div>
+              
+              <div className="flex flex-wrap gap-1.5">
+                {slugsToShow.map((slugData, index) => (
+                  <button
+                    key={index}
+                    onClick={() => openCloneUrl(slugData.slug)}
+                    className="group/slug flex items-center space-x-1.5 rounded-md bg-gray-700/50 px-2.5 py-1.5 text-xs transition-all duration-200 hover:bg-gray-700 hover:scale-105 cursor-pointer border border-transparent hover:border-blue-500/30"
+                    title={`Abrir ${detection.domain}${slugData.slug} em nova aba`}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <Icons.Globe className="h-3 w-3 text-blue-400 group-hover/slug:text-blue-300" />
+                      <code className="font-mono text-blue-300 group-hover/slug:text-blue-200">
+                        {slugData.slug}
+                      </code>
+                    </div>
+                    <span className="text-gray-400">•</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="font-semibold text-blue-300 group-hover/slug:text-blue-200">
+                        {slugData.unique_visitors}
+                      </span>
+                      <span className="text-gray-500">únicos</span>
+                    </div>
+                    <span className="text-gray-600">/</span>
+                    <span className="text-green-300 group-hover/slug:text-green-200">
+                      {slugData.total_visits}
+                    </span>
+                    <Icons.ArrowRight className="h-3 w-3 text-gray-400 group-hover/slug:text-blue-300 opacity-0 group-hover/slug:opacity-100 transition-opacity duration-200" />
+                  </button>
+                ))}
+              </div>
+              
+              {/* Indicador de slugs ocultas quando não expandido */}
+              {!showAllSlugs && detection.slugs_data.length > 3 && (
+                <div className="mt-1.5 text-xs text-gray-500">
+                  +{detection.slugs_data.length - 3} páginas adicionais
+                </div>
+              )}
             </div>
           )}
 
