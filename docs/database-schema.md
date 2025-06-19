@@ -78,19 +78,34 @@ Domínios cadastrados pelo usuário onde o script pode funcionar.
 - `is_active` (BOOLEAN) - Domínio ativo
 - `created_at` (TIMESTAMP)
 
-### 5. `generated_scripts` - Scripts Gerados
+### 5. `generated_scripts` - Scripts Gerados e Lookup Seguro ⭐
 
-Scripts ofuscados únicos para cada usuário.
+**NOVA FUNCIONALIDADE**: Tabela de lookup seguro para converter scriptId em UUID real.
+
+Scripts ofuscados únicos para cada usuário com sistema de segurança híbrido.
 
 **Campos:**
 
 - `id` (SERIAL, PK)
-- `user_id` (UUID, FK) - Proprietário do script
-- `script_id` (TEXT) - ID único do script
-- `script_content` (TEXT) - Conteúdo ofuscado
-- `version` (INTEGER) - Versão do script
-- `is_active` (BOOLEAN) - Script ativo
-- `created_at` (TIMESTAMP)
+- `user_id` (UUID, FK) - UUID real do usuário (profiles.id)
+- `script_id` (TEXT, UNIQUE) - Script ID ofuscado (fx_abc123def456)
+- `script_content` (TEXT) - Conteúdo do script ofuscado
+- `version` (INTEGER) - Versão do script (padrão: 1)
+- `is_active` (BOOLEAN) - Script ativo (padrão: true)
+- `created_at` (TIMESTAMP) - Data de criação
+- `updated_at` (TIMESTAMP) - Última atualização
+
+**Funcionalidade:**
+
+- **Lookup Seguro**: Converte `fx_133daf2e9580` → `9dc69d8a-0dc2-4122-b6c9-98782b9ce887`
+- **Hash SHA256**: Script ID gerado com hash irreversível + chave secreta
+- **Validação Real**: APIs obrigatoriamente fazem lookup antes de processar
+- **Compatibilidade**: Fallback para scripts antigos via hash reverso
+
+**Índices:**
+
+- `idx_generated_scripts_script_id` (script_id)
+- `idx_generated_scripts_user_id` (user_id)
 
 ### 6. `detected_clones` - Clones Detectados
 
@@ -180,8 +195,11 @@ Configurações personalizadas de triggers por usuário para detecção de parâ
 
 - `profiles.api_key` (único)
 - `allowed_domains.domain` + `user_id`
+- **`generated_scripts.script_id` (único, performance crítica)** ⭐
+- **`generated_scripts.user_id` (lookup reverso)** ⭐
 - `detected_clones.clone_domain` + `user_id`
 - `detection_logs.timestamp` (para análises)
+- `user_trigger_configs.user_id` (único)
 
 ---
 

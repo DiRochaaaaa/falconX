@@ -93,9 +93,13 @@ Implementar um **Sistema de Script Loader** que substitui o script inline por:
 
 #### **3. Segurança Aprimorada**
 
-- UserID nunca exposto no código
-- Endpoints genéricos (`/api/collect`, `/api/process`)
-- Ofuscação total do JavaScript
+- **Sistema de Lookup Seguro:** ScriptID → UUID real via tabela `generated_scripts` ⭐
+- **Hash SHA256 irreversível** com chave secreta ⭐
+- **UserID nunca exposto** no código frontend
+- **Endpoints genéricos** (`/api/collect`, `/api/process`)
+- **Validação obrigatória** via lookup no banco ⭐
+- **Ofuscação total** do JavaScript
+- **Compatibilidade híbrida** com formatos antigo/novo ⭐
 
 #### **4. Manutenibilidade**
 

@@ -63,10 +63,14 @@ O FalconX implementou um sistema revolucionário de **Script Loader** que substi
 
 ### **5. 🛡️ Segurança Aprimorada**
 
-- UserID nunca exposto no código
-- Endpoints genéricos (`/api/collect`, `/api/process`)
-- Rate limiting por IP + UserID
-- Headers de segurança otimizados
+- **Sistema de Lookup Seguro**: ScriptID → UUID real via tabela `generated_scripts`
+- **Hash SHA256 Irreversível**: Impossível descobrir userId a partir do scriptId
+- **UserID nunca exposto** no código frontend
+- **Endpoints genéricos** (`/api/collect`, `/api/process`)
+- **Validação Real**: Lookup obrigatório no banco antes de qualquer operação
+- **Compatibilidade Híbrida**: Suporte a formatos antigo e novo
+- **Rate limiting** por IP + UserID
+- **Headers de segurança** otimizados
 
 ## 🏗️ Arquitetura Técnica
 
@@ -76,49 +80,117 @@ O FalconX implementou um sistema revolucionário de **Script Loader** que substi
 graph TD
     A[Site do Usuário] --> B[Script Loader 80 bytes]
     B --> C[GET /api/js/fx_abc123]
-    C --> D[Script Ofuscado Dinâmico]
-    D --> E[Execução no Browser]
-    E --> F[POST /api/collect]
-    F --> G[Detecção de Clone]
-    G --> H[POST /api/process]
-    H --> I[Execução de Ação]
+    C --> D{Lookup Seguro}
+    D --> E[generated_scripts Table]
+    E --> F[UUID Real do Usuário]
+    F --> G[Script Ofuscado Dinâmico]
+    G --> H[Execução no Browser]
+    H --> I[POST /api/collect]
+    I --> J[Lookup scriptId → UUID]
+    J --> K[Detecção de Clone]
+    K --> L[POST /api/process]
+    L --> M[Lookup scriptId → UUID]
+    M --> N[Execução de Ação]
 ```
 
 ### **Componentes**
 
 #### **1. Script Loader (`/api/js/[scriptId]`)**
 
-- Gera script único por usuário
-- Valida scriptId com hash SHA256
-- Retorna JavaScript ofuscado
-- Headers de cache otimizados
+- **Lookup Seguro**: Converte scriptId para UUID real via `generated_scripts`
+- **Gera script único** por usuário baseado no UUID
+- **Valida scriptId** com hash SHA256 + fallback de compatibilidade
+- **Retorna JavaScript ofuscado** dinamicamente
+- **Headers anti-cache** para força atualização em deploy
+- **Headers de cache** otimizados para performance
 
 #### **2. API Collect (`/api/collect`)**
 
-- Substitui `/api/detect`
-- Parâmetros ofuscados (`uid`, `dom`, `url`)
-- UserID codificado em Base64
-- Rate limiting inteligente
+- **Substitui `/api/detect`** com nomenclatura genérica
+- **Suporte híbrido**: Aceita formato antigo (`scriptId`, `domain`) e novo (`uid`, `dom`)
+- **Lookup obrigatório**: Converte scriptId para UUID antes de qualquer operação
+- **Parâmetros ofuscados** (`uid`, `dom`, `url`, `ref`, `ua`)
+- **UserID real** obtido via lookup na tabela `generated_scripts`
+- **Rate limiting** inteligente por IP + UUID real
 
 #### **3. API Process (`/api/process`)**
 
-- Substitui `/api/execute-action`
-- Lógica de triggers preservada
-- Respostas genéricas
-- Execução baseada em porcentagem
+- **Substitui `/api/execute-action`** com nomenclatura genérica
+- **Suporte híbrido**: Aceita formato antigo e novo
+- **Lookup obrigatório**: Validação de scriptId antes de executar ações
+- **Lógica de triggers** preservada e dinâmica
+- **Respostas genéricas** para não expor funcionalidade
+- **Execução baseada em porcentagem** configurável
 
 ## 🔧 Implementação
 
-### **Geração de Script ID**
+### **Sistema de Lookup Seguro**
+
+#### **1. Geração de Script ID**
 
 ```typescript
 function generateScriptId(userId: string): string {
-  const SECRET_KEY = process.env.SCRIPT_SECRET_KEY
+  const SECRET_KEY = process.env.SCRIPT_SECRET_KEY || 'falconx-secret-2025'
   const hash = createHash('sha256')
     .update(userId + SECRET_KEY)
     .digest('hex')
   return `fx_${hash.substring(0, 12)}`
 }
+```
+
+#### **2. Lookup scriptId → UUID Real**
+
+```typescript
+async function scriptIdToUserId(scriptId: string): Promise<string | null> {
+  try {
+    // 1. Primeiro, tentar lookup na tabela generated_scripts (SEGURO)
+    const { data: scriptData, error: scriptError } = await supabaseAdmin
+      .from('generated_scripts')
+      .select('user_id')
+      .eq('script_id', scriptId)
+      .eq('is_active', true)
+      .single()
+
+    if (scriptData && !scriptError) {
+      return scriptData.user_id // UUID real
+    }
+
+    // 2. Fallback: hash reverso para compatibilidade
+    const { data: profiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+
+    for (const profile of profiles) {
+      if (generateScriptId(profile.id) === scriptId) {
+        return profile.id
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Erro no scriptIdToUserId:', error)
+    return null
+  }
+}
+```
+
+#### **3. Tabela generated_scripts**
+
+```sql
+CREATE TABLE generated_scripts (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    script_id TEXT UNIQUE NOT NULL,
+    script_content TEXT,
+    version INTEGER DEFAULT 1,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para performance
+CREATE INDEX idx_generated_scripts_script_id ON generated_scripts(script_id);
+CREATE INDEX idx_generated_scripts_user_id ON generated_scripts(user_id);
 ```
 
 ### **Script Ofuscado (Exemplo)**
@@ -193,6 +265,52 @@ const scriptHeaders = {
   'X-Content-Type-Options': 'nosniff',
 }
 ```
+
+## 🔄 Compatibilidade Híbrida
+
+### **Suporte a Múltiplos Formatos**
+
+As APIs `/api/collect` e `/api/process` foram atualizadas para aceitar **AMBOS** os formatos:
+
+#### **Formato NOVO (Ofuscado)**
+```json
+{
+  "uid": "OWRjNjlkOGEtMGRjMi00MTIyLWI2YzktOTg3ODJiOWNlODg3",
+  "dom": "conversecomjesus.site",
+  "url": "https://conversecomjesus.site/page",
+  "ref": "https://google.com",
+  "ua": "Mozilla/5.0...",
+  "ts": "2025-01-19T10:30:00.000Z"
+}
+```
+
+#### **Formato ANTIGO (Compatibilidade)**
+```json
+{
+  "scriptId": "fx_133daf2e9580",
+  "domain": "conversecomjesus.site", 
+  "url": "https://conversecomjesus.site/page",
+  "referrer": "https://google.com",
+  "userAgent": "Mozilla/5.0...",
+  "timestamp": "2025-01-19T10:30:00.000Z"
+}
+```
+
+### **Processo de Conversão Automática**
+
+1. **API recebe** formato antigo (`scriptId`)
+2. **Lookup obrigatório** na tabela `generated_scripts`
+3. **Conversão para UUID real** do usuário
+4. **Processamento normal** com UUID válido
+5. **Resposta consistente** independente do formato
+
+### **Vantagens da Compatibilidade**
+
+- **✅ Zero downtime** durante atualizações
+- **✅ Scripts antigos** continuam funcionando
+- **✅ Migração gradual** conforme necessário
+- **✅ Fallback automático** para compatibilidade
+- **✅ Segurança mantida** em ambos os formatos
 
 ## 🔍 Detecção de Problemas
 

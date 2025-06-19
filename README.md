@@ -11,9 +11,11 @@
 
 - **🔍 Detecção em Tempo Real** - Monitora clones de funis instantaneamente
 - **🛡️ Proteção Automatizada** - Ações configuráveis contra clones detectados
+- **🔐 Sistema de Lookup Seguro** - ScriptID → UUID com hash SHA256 irreversível ⭐
 - **📊 Dashboard Intuitivo** - Interface SPA de alta performance
 - **🎯 Multi-Planos** - Free, Bronze, Silver e Gold com limites escaláveis
-- **🔐 Segurança Avançada** - Rate limiting, headers de segurança, validação rigorosa
+- **🛡️ Segurança Avançada** - Rate limiting, headers de segurança, validação rigorosa
+- **🔄 Compatibilidade Híbrida** - Suporte a formatos antigo e novo simultaneamente ⭐
 - **📈 Analytics Detalhados** - Logs estruturados e métricas de performance
 
 ## 🏗️ Arquitetura Técnica
@@ -88,6 +90,10 @@ LOG_LEVEL=info
 ```bash
 # Execute o script de setup no Supabase SQL Editor
 # Arquivo: falconx-database-setup-safe.sql
+
+# IMPORTANTE: Execute também a migração do sistema de lookup
+# Via Supabase Dashboard: 
+# CREATE TABLE generated_scripts (...) -- Ver docs/database-schema.md
 
 # Gere os tipos TypeScript
 npm run db:types
@@ -185,9 +191,11 @@ logger.securityEvent('rate_limit_exceeded', { ip: '192.168.1.1' })
 
 ## 📚 Documentação
 
-- **[Database Schema](docs/database-schema.md)** - Estrutura do banco
+- **[Database Schema](docs/database-schema.md)** - Estrutura do banco + tabela generated_scripts ⭐
+- **[Script Loader System](docs/SCRIPT_LOADER_SYSTEM.md)** - Sistema de lookup seguro ⭐
 - **[Quality Rules](QUALITY_RULES_IMPLEMENTED.md)** - Regras implementadas
 - **[ADRs](docs/adr/)** - Decisões arquiteturais
+  - **[ADR-006: Sistema de Lookup Seguro](docs/adr/2025-01-19-secure-script-lookup-system.md)** ⭐
 
 ## 🤝 Contribuição
 
