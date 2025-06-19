@@ -37,13 +37,17 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // Parse do body com parâmetros ofuscados
-    interface RequestBody {
-      uid: string // userId (codificado em Base64)
-      dom: string // cloneDomain
-      url?: string // currentUrl
-      ua?: string // userAgent
-      ref?: string // referrer
+    // Parse do body com suporte aos formatos antigo e novo
+    type RequestBody = {
+      uid?: string // userId (codificado em Base64) - formato novo
+      dom?: string // cloneDomain - formato novo
+      scriptId?: string // formato antigo
+      domain?: string // formato antigo
+      url?: string
+      ref?: string // referrer (formato novo)
+      referrer?: string // referrer (formato antigo)
+      ua?: string // userAgent (formato novo)
+      userAgent?: string // userAgent (formato antigo)
     }
 
     let body: RequestBody
@@ -53,9 +57,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400, headers: corsHeaders })
     }
 
-    const { uid, dom, ref, url } = body
+    // Detectar formato e normalizar parâmetros
+    let uid: string, dom: string, url: string | undefined, ref: string | undefined
 
-    if (!uid || !dom) {
+    if (body.uid && body.dom) {
+      // Formato novo (ofuscado)
+      uid = body.uid
+      dom = body.dom
+      url = body.url
+      ref = body.ref
+    } else if (body.scriptId && body.domain) {
+      // Formato antigo (compatibilidade)
+      const userId = body.scriptId.replace('fx_', '')
+      uid = Buffer.from(userId, 'utf-8').toString('base64')
+      dom = body.domain
+      url = body.url
+      ref = body.referrer
+    } else {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400, headers: corsHeaders }
