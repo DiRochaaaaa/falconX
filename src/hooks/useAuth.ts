@@ -47,41 +47,41 @@ export function useAuth() {
       try {
         const profileWithPlan = await getUserPlanInfo(userId)
         if (profileWithPlan) {
+          // Calcular usage baseado nos dados do plano
+          const currentClones = profileWithPlan.subscription.current_clone_count + profileWithPlan.subscription.extra_clones_used
+          const cloneLimit = profileWithPlan.subscription.clone_limit
+          const usageProgress = cloneLimit > 0 ? Math.min((currentClones / cloneLimit) * 100, 100) : 0
+          
           // Converter usage para formato do hook
           const usage: PlanUsage = {
-            currentClones: profileWithPlan.usage.currentClones,
-            cloneLimit: profileWithPlan.usage.cloneLimit,
-            extraClones: profileWithPlan.usage.extraClones,
-            resetDate: profileWithPlan.usage.resetDate,
-            canDetectMore: profileWithPlan.usage.canDetectMore,
-            usageProgress: profileWithPlan.usage.usageProgress,
-            alertLevel: profileWithPlan.usage.usageProgress >= 100 ? 'danger' 
-              : profileWithPlan.usage.usageProgress >= 80 ? 'warning' 
+            currentClones: currentClones,
+            cloneLimit: cloneLimit,
+            extraClones: profileWithPlan.subscription.extra_clones_used,
+            resetDate: profileWithPlan.subscription.reset_date,
+            canDetectMore: profileWithPlan.plan.slug === 'free' 
+              ? currentClones < cloneLimit
+              : true, // Planos pagos sempre podem (cobram extras)
+            usageProgress: usageProgress,
+            alertLevel: usageProgress >= 100 ? 'danger' 
+              : usageProgress >= 80 ? 'warning' 
               : 'success',
             planInfo: {
+              name: profileWithPlan.plan.name,
+              slug: profileWithPlan.plan.slug,
               cloneLimit: profileWithPlan.plan.clone_limit,
-              domainLimit: profileWithPlan.plan.slug === 'free' ? 3 
-                : profileWithPlan.plan.slug === 'bronze' ? 10
-                : profileWithPlan.plan.slug === 'silver' ? 25
-                : -1, // gold e diamond = ilimitado
+              domainLimit: profileWithPlan.plan.domain_limit || (
+                profileWithPlan.plan.slug === 'free' ? 1 
+                : profileWithPlan.plan.slug === 'bronze' ? 3
+                : profileWithPlan.plan.slug === 'silver' ? 5
+                : profileWithPlan.plan.slug === 'gold' ? 10
+                : -1 // diamond = ilimitado
+              ),
               price: profileWithPlan.plan.price,
               extraClonePrice: profileWithPlan.plan.extra_clone_price,
-              features: {
-                realTimeDetection: true,
-                customActions: profileWithPlan.plan.slug !== 'free',
-                advancedAnalytics: ['silver', 'gold', 'diamond'].includes(profileWithPlan.plan.slug),
-                prioritySupport: ['gold', 'diamond'].includes(profileWithPlan.plan.slug),
-                apiAccess: ['gold', 'diamond'].includes(profileWithPlan.plan.slug),
-              },
-              name: profileWithPlan.plan.name,
-              description: profileWithPlan.plan.slug === 'free' ? 'Ideal para testar o sistema'
-                : profileWithPlan.plan.slug === 'bronze' ? 'Perfeito para pequenos negócios'
-                : profileWithPlan.plan.slug === 'silver' ? 'Para quem está crescendo'
-                : profileWithPlan.plan.slug === 'gold' ? 'Para negócios estabelecidos'
-                : 'Para grandes empresas',
+              features: profileWithPlan.plan.features || [],
             },
             planSlug: profileWithPlan.plan.slug,
-            lastUpdated: profileWithPlan.usage.lastUpdated,
+            lastUpdated: new Date().toISOString(),
           }
 
           updateAuthState({ profile: profileWithPlan, usage, error: null })

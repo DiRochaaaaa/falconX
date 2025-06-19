@@ -10,7 +10,8 @@ interface DashboardStats {
 }
 
 interface PlanLimits {
-  domains: number
+  clones: number    // Limite de clones detectáveis
+  domains: number   // Limite de domínios monitorados  
   price: number
 }
 
@@ -122,21 +123,23 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
         value={
           loading
             ? '...'
-            : `${stats?.allowedDomains || 0}${planLimits.domains > 0 ? `/${planLimits.domains}` : ''}`
+            : planLimits.domains === -1 
+              ? `${stats?.allowedDomains || 0}` 
+              : `${stats?.allowedDomains || 0}/${planLimits.domains}`
         }
         loading={loading}
         color="green"
-        subtitle={planLimits.domains > 0 ? `Limite: ${planLimits.domains}` : 'Ilimitado'}
+        subtitle={planLimits.domains === -1 ? 'Ilimitado' : `Limite: ${planLimits.domains} domínios`}
         trend="neutral"
       />
 
       <StatCard
         icon={Icons.Warning}
         title="Clones Detectados"
-        value={loading ? '...' : `${stats?.detectedClones || 0}${planLimits.domains > 0 ? `/${planLimits.domains}` : ''}`}
+        value={loading ? '...' : `${stats?.detectedClones || 0}/${planLimits.clones}`}
         loading={loading}
         color="red"
-        subtitle={planLimits.domains > 0 ? `Limite: ${planLimits.domains} clones/mês` : 'Ilimitado'}
+        subtitle={`Limite: ${planLimits.clones} clones/mês`}
         trend={stats?.detectedClones && stats.detectedClones > 0 ? 'up' : 'neutral'}
       />
 

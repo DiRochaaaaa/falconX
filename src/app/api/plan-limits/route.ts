@@ -32,8 +32,11 @@ export async function GET(request: NextRequest) {
 
     // Calcular próxima data de reset se necessário
     let nextResetDate = limits.resetDate
-    if (userPlanInfo.subscription.needs_reset) {
-      const now = new Date()
+    
+    // Verificar se precisa resetar baseado na data
+    const now = new Date()
+    const resetDateObj = new Date(limits.resetDate)
+    if (now >= resetDateObj) {
       const nextReset = new Date(now)
       nextReset.setMonth(nextReset.getMonth() + 1)
       nextResetDate = nextReset.toISOString()

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from './types/database'
+import { ProfileWithPlan } from '@/lib/types/database'
 
 // Verificar se as variáveis de ambiente estão definidas
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -61,83 +62,81 @@ export interface UserProfile {
 }
 
 // Helper function to get user plan information with usage data
-export async function getUserPlanInfo(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(`
-      *,
-      user_subscriptions!inner(
-        plan_id,
-        current_clone_count,
-        clone_limit,
-        extra_clones_used,
-        reset_date,
-        status,
-        started_at,
-        expires_at,
-        plans!inner(
+export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan | null> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        user_subscriptions!inner(
           id,
-          name,
-          slug,
-          price,
+          plan_id,
+          status,
+          current_clone_count,
           clone_limit,
-          extra_clone_price,
-          features
+          extra_clones_used,
+          reset_date,
+          created_at,
+          updated_at,
+          needs_reset,
+          plans!inner(
+            id,
+            name,
+            slug,
+            price,
+            clone_limit,
+            domain_limit,
+            extra_clone_price,
+            features,
+            is_active
+          )
         )
-      )
-    `)
-    .eq('id', userId)
-    .single()
+      `)
+      .eq('id', userId)
+      .eq('user_subscriptions.status', 'active')
+      .single()
 
-  if (error) {
-    console.error('Error fetching user plan info:', error)
-    return null
-  }
-
-  // Flatten the structure for easier access
-  const subscription = data.user_subscriptions[0]
-  const plan = subscription.plans
-
-  // Verificar se precisa resetar contador (mensal)
-  const now = new Date()
-  const resetDate = new Date(subscription.reset_date)
-  const needsReset = now >= resetDate
-
-  return {
-    ...data,
-    subscription: {
-      plan_id: subscription.plan_id,
-      current_clone_count: needsReset ? 0 : subscription.current_clone_count,
-      clone_limit: subscription.clone_limit,
-      extra_clones_used: needsReset ? 0 : subscription.extra_clones_used,
-      reset_date: subscription.reset_date,
-      status: subscription.status,
-      started_at: subscription.started_at,
-      expires_at: subscription.expires_at,
-      needs_reset: needsReset,
-    },
-    plan: {
-      id: plan.id,
-      name: plan.name,
-      slug: plan.slug,
-      price: plan.price,
-      clone_limit: plan.clone_limit,
-      extra_clone_price: plan.extra_clone_price,
-      features: plan.features
-    },
-    // Dados calculados para facilitar uso no frontend
-    usage: {
-      currentClones: needsReset ? 0 : subscription.current_clone_count,
-      cloneLimit: subscription.clone_limit,
-      extraClones: needsReset ? 0 : subscription.extra_clones_used,
-      usageProgress: subscription.clone_limit > 0 
-        ? Math.min(((needsReset ? 0 : subscription.current_clone_count) / subscription.clone_limit) * 100, 100)
-        : 0,
-      canDetectMore: plan.slug === 'free' 
-        ? (needsReset ? 0 : subscription.current_clone_count) < subscription.clone_limit
-        : true, // Planos pagos sempre podem (cobram extras)
-      resetDate: subscription.reset_date,
-      lastUpdated: new Date().toISOString(),
+    if (error) {
+      console.error('Erro ao buscar informações do usuário:', error)
+      return null
     }
+
+    if (!data || !data.user_subscriptions) {
+      console.error('Usuário sem subscription ativa encontrado')
+      return null
+    }
+
+    const subscription = data.user_subscriptions
+    const plan = subscription.plans
+
+    return {
+      ...data,
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        slug: plan.slug,
+        price: plan.price,
+        clone_limit: plan.clone_limit,
+        domain_limit: plan.domain_limit,
+        extra_clone_price: plan.extra_clone_price,
+        features: plan.features,
+        is_active: plan.is_active
+      },
+      subscription: {
+        id: subscription.id,
+        plan_id: subscription.plan_id,
+        status: subscription.status,
+        current_clone_count: subscription.current_clone_count,
+        clone_limit: subscription.clone_limit,
+        extra_clones_used: subscription.extra_clones_used,
+        reset_date: subscription.reset_date,
+        created_at: subscription.created_at,
+        updated_at: subscription.updated_at,
+        needs_reset: subscription.needs_reset
+      }
+    }
+  } catch (error) {
+    console.error('Erro crítico ao buscar informações do usuário:', error)
+    return null
   }
 }

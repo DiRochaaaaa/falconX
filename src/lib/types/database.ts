@@ -39,6 +39,7 @@ export interface Database {
           slug: string
           price: number
           clone_limit: number
+          domain_limit: number
           extra_clone_price: number
           features: Json
           is_active: boolean
@@ -51,6 +52,7 @@ export interface Database {
           slug: string
           price?: number
           clone_limit?: number
+          domain_limit?: number
           extra_clone_price?: number
           features?: Json
           is_active?: boolean
@@ -63,6 +65,7 @@ export interface Database {
           slug?: string 
           price?: number
           clone_limit?: number
+          domain_limit?: number
           extra_clone_price?: number
           features?: Json
           is_active?: boolean
@@ -454,11 +457,15 @@ export interface ProfileUpdate {
 // Novo tipo para Profile com informações do plano via JOIN
 export interface ProfileWithPlan extends Profile {
   subscription: {
+    id: number
     plan_id: number
+    status: string
     current_clone_count: number
     clone_limit: number
     extra_clones_used: number
     reset_date: string
+    created_at: string
+    updated_at: string
   }
   plan: {
     id: number
@@ -466,7 +473,9 @@ export interface ProfileWithPlan extends Profile {
     slug: 'free' | 'bronze' | 'silver' | 'gold' | 'diamond'
     price: number
     clone_limit: number
+    domain_limit: number
     extra_clone_price: number
     features: any
+    is_active: boolean
   }
 }

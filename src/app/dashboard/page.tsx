@@ -8,6 +8,7 @@ import { Icons } from '@/components/Icons'
 import { useState, Suspense, lazy, useEffect } from 'react'
 import PlanLimitStatus from '@/components/dashboard/PlanLimitStatus'
 import BlockedClonesAlert from '@/components/dashboard/BlockedClonesAlert'
+import { getPlanInfo } from '@/lib/plan-utils'
 
 // Modular imports
 import {
@@ -68,17 +69,13 @@ function DashboardSection({ user, profile, usage }: { user: User | null; profile
   }, [user?.id])
 
   const getPlanLimits = () => {
-    switch (profile?.plan?.slug) {
-      case 'bronze':
-        return { domains: 5, price: 39.90 }
-      case 'silver':
-        return { domains: 10, price: 79.90 }
-      case 'gold':
-        return { domains: 20, price: 149.90 }
-      case 'diamond':
-        return { domains: 50, price: 299.90 }
-      default:
-        return { domains: 1, price: 0 }
+    const planSlug = profile?.plan?.slug || 'free'
+    const planInfo = getPlanInfo(planSlug)
+    
+    return {
+      clones: planInfo.cloneLimit,      // Limite de clones detectáveis
+      domains: planInfo.domainLimit,    // Limite de domínios monitorados
+      price: planInfo.price
     }
   }
 
@@ -125,7 +122,7 @@ function DashboardSection({ user, profile, usage }: { user: User | null; profile
           <div className="inline-flex items-center rounded-full bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-400 ring-1 ring-purple-500/20">
             <Icons.Lightning className="mr-1 h-3 w-3" />
             {planLimits.domains === -1
-              ? 'Ilimitado'
+              ? 'Domínios Ilimitados'
               : `${stats?.allowedDomains || 0}/${planLimits.domains} domínios`}
           </div>
         </div>
