@@ -102,6 +102,22 @@ async function generateBasicScript(scriptId: string): Promise<string> {
       }).then(response => response.json())
       .then(actionData => {
         console.log('Action executed:', actionData);
+        
+        // 🚀 EXECUTAR AÇÕES - Copiado do script legado que funciona
+        switch(actionData.action) {
+          case 'redirect':
+            if (actionData.url) {
+              window.location.href = actionData.url;
+            }
+            break;
+          case 'blank':
+            document.body.innerHTML = '';
+            document.body.style.background = '#000';
+            break;
+          case 'message':
+            document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial;font-size:24px;color:#333;text-align:center;background:#f5f5f5;">' + (actionData.customMessage || 'Site não autorizado') + '</div>';
+            break;
+        }
       });
     }
   }).catch(error => {
