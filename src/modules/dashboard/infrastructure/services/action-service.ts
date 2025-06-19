@@ -30,7 +30,24 @@ export class ActionService {
 
   async createAction(userId: string, actionData: CreateActionRequest): Promise<{ error?: string }> {
     try {
-      const { error } = await supabase.from('clone_actions').insert({
+      // 🔧 NOVA LÓGICA: Substituir ação existente em vez de adicionar
+      // 1. Primeiro, desativar qualquer ação ativa existente
+      const { error: deactivateError } = await supabase
+        .from('clone_actions')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('is_active', true)
+
+      // Não falhar se não houver ações para desativar
+      if (deactivateError) {
+        console.warn('Aviso ao desativar ações anteriores:', deactivateError)
+      }
+
+      // 2. Agora criar a nova ação ativa
+      const { error: insertError } = await supabase.from('clone_actions').insert({
         user_id: userId,
         action_type: actionData.action_type,
         redirect_url:
@@ -43,7 +60,11 @@ export class ActionService {
         is_active: true,
       })
 
-      if (error) {
+      if (insertError) {
+        // Se ainda falhar por constraint, tentar abordagem alternativa
+        if (insertError.code === '23505') {
+          return { error: 'Você já possui uma ação ativa. Por favor, desative a ação atual antes de criar uma nova.' }
+        }
         return { error: 'Erro ao criar ação' }
       }
 
