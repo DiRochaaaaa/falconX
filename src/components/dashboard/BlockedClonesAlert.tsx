@@ -6,7 +6,7 @@ import { DashboardUser } from '@/modules/dashboard/domain/types'
 
 interface BlockedClonesAlertProps {
   user: DashboardUser | null
-  _limits: any
+  _limits: { clones: number; domains: number; price: number }
   loading: boolean
 }
 

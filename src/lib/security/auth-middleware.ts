@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, User } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 
 interface AuthResult {
   success: boolean
   userId?: string
   error?: string
-  user?: any
+  user?: User
 }
 
 /**

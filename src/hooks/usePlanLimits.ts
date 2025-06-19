@@ -55,7 +55,7 @@ export function usePlanLimits(userId: string | null, planSlug?: string): UsePlan
       
       // Se não tem planSlug, tentar extrair do resultado
       const currentPlanSlug = planSlug || 'free' // fallback seguro
-      const planInfo = getPlanInfo(currentPlanSlug as any)
+      const planInfo = getPlanInfo(currentPlanSlug as 'free' | 'bronze' | 'silver' | 'gold' | 'diamond')
 
       // Calcular progresso e alert level
       const usageProgress = planInfo.cloneLimit > 0 

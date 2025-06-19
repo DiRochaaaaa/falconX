@@ -92,7 +92,7 @@ export function isOriginAllowed(origin: string | null): boolean {
  * Headers CORS seguros para APIs públicas (collect/detect)
  * Essas APIs precisam ser acessíveis de qualquer domínio para funcionar
  */
-export function getPublicCorsHeaders(origin: string | null = null): Record<string, string> {
+export function getPublicCorsHeaders(_origin: string | null = null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': '*', // APIs públicas devem aceitar qualquer origem
     'Access-Control-Allow-Methods': 'POST, OPTIONS',

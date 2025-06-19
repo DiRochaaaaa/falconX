@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     const limits = await checkCloneLimits(userId)
 
     // 8. Buscar informações detalhadas do plano
-    const planDetails = getPlanInfo(userPlanInfo.plan.slug as any)
+    const planDetails = getPlanInfo(userPlanInfo.plan.slug as 'free' | 'bronze' | 'silver' | 'gold' | 'diamond')
 
     // 9. Calcular dados de blocked clones (clones detectados mas não contabilizados)
     const totalDetectedClones = limits.currentCount + limits.extraUsed

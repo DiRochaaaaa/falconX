@@ -8,6 +8,7 @@ import { Icons } from '@/components/Icons'
 import PlanLimitStatus from '@/components/dashboard/PlanLimitStatus'
 import BlockedClonesAlert from '@/components/dashboard/BlockedClonesAlert'
 import { getPlanInfo } from '@/lib/plan-utils'
+import { PlanUsage } from '@/hooks/usePlanLimits'
 
 // Modular imports
 import {
@@ -30,7 +31,7 @@ const SettingsSection = lazy(() => import('./sections/SettingsSection'))
 const BillingSection = lazy(() => import('./sections/BillingSection'))
 
 // Main Dashboard Section Component
-function DashboardSection({ user, profile, usage }: { user: User | null; profile: DashboardUser | null; usage: any }) {
+function DashboardSection({ user, profile, usage }: { user: User | null; profile: DashboardUser | null; usage: PlanUsage | null }) {
   const [blockedClonesCount, setBlockedClonesCount] = useState(0)
 
   const {
@@ -372,7 +373,7 @@ class ErrorBoundary extends React.Component<
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: { componentStack?: string }) {
     console.error('Dashboard Error Boundary:', error, errorInfo)
   }
 

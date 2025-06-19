@@ -52,7 +52,7 @@ export function useAuth() {
 
         while (attempt < maxRetries && !profileWithPlan) {
           attempt++
-          console.log(`Tentativa ${attempt}/${maxRetries} de carregar perfil do usuário ${userId}`)
+          console.warn(`Tentativa ${attempt}/${maxRetries} de carregar perfil do usuário ${userId}`)
           
           profileWithPlan = await getUserPlanInfo(userId)
           
@@ -195,7 +195,7 @@ export function useAuth() {
       } catch (error) {
         console.error('Erro no signup:', error)
         updateAuthState({ error: 'Erro ao criar conta' })
-        return { data: null, error: error as any }
+        return { data: null, error: error as Error }
       }
     },
     [updateAuthState]
@@ -260,7 +260,7 @@ export function useAuth() {
         }
 
         if (session?.user) {
-          console.log('Usuário encontrado na sessão:', session.user.id)
+          console.warn('Usuário encontrado na sessão:', session.user.id)
           updateAuthState({ user: session.user, loading: true })
           
           // Carregar perfil com timeout de segurança
@@ -280,7 +280,7 @@ export function useAuth() {
             })
           }
         } else {
-          console.log('Nenhuma sessão ativa encontrada')
+          console.warn('Nenhuma sessão ativa encontrada')
           updateAuthState({ 
             user: null,
             profile: null,
@@ -314,13 +314,13 @@ export function useAuth() {
           // [APLICANDO CORREÇÃO SUPABASE BUG] - usar setTimeout para evitar deadlock
           setTimeout(async () => {
             if (mounted) {
-              console.log('Carregando perfil após mudança de auth state:', session.user.id)
+              console.warn('Carregando perfil após mudança de auth state:', session.user.id)
               updateAuthState({ loading: true })
               await loadUserProfile(session.user.id, session.user.email || undefined)
             }
           }, 0)
         } else {
-          console.log('Usuário deslogado, limpando estado')
+          console.warn('Usuário deslogado, limpando estado')
           updateAuthState({ 
             user: null,
             profile: null, 
