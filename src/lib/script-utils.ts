@@ -1,4 +1,12 @@
 import { createHash } from 'crypto'
+import { createClient } from '@supabase/supabase-js'
+import { Database } from './types/database'
+
+// Cliente Supabase com privilégios de admin para operações de backend
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 /**
  * Gera script ID único baseado no userId
@@ -30,4 +38,44 @@ export function validateScriptId(scriptId: string, userId: string): boolean {
  */
 export function isValidScriptIdFormat(scriptId: string): boolean {
   return !!(scriptId && scriptId.startsWith('fx_') && scriptId.length === 15)
+}
+
+/**
+ * Converte scriptId para UUID real via lookup no banco
+ * @param scriptId - Script ID a ser convertido
+ * @returns UUID real do usuário ou null se não encontrado
+ */
+export async function scriptIdToUserId(scriptId: string): Promise<string | null> {
+  try {
+    // 1. Primeiro, tentar lookup na tabela generated_scripts
+    const { data: scriptData, error: scriptError } = await supabaseAdmin
+      .from('generated_scripts')
+      .select('user_id')
+      .eq('script_id', scriptId)
+      .eq('is_active', true)
+      .single()
+
+    if (scriptData && !scriptError) {
+      return scriptData.user_id
+    }
+
+    // 2. Fallback: tentar como hash reverso (compatibilidade)
+    // Buscar por todos os usuários e verificar qual hash corresponde
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+
+    if (profiles && !profilesError) {
+      for (const profile of profiles) {
+        if (generateScriptId(profile.id) === scriptId) {
+          return profile.id
+        }
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Erro no scriptIdToUserId:', error)
+    return null
+  }
 }

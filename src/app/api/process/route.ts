@@ -67,9 +67,18 @@ export async function POST(request: NextRequest) {
       url = body.url
       ref = body.ref
     } else if (body.scriptId && body.domain) {
-      // Formato antigo (compatibilidade)
-      const userId = body.scriptId.replace('fx_', '')
-      uid = Buffer.from(userId, 'utf-8').toString('base64')
+      // Formato antigo (compatibilidade) - usar lookup para pegar UUID real
+      const { scriptIdToUserId } = await import('@/lib/script-utils')
+      const realUserId = await scriptIdToUserId(body.scriptId)
+      
+      if (!realUserId) {
+        return NextResponse.json(
+          { error: 'Invalid script identifier' },
+          { status: 400, headers: corsHeaders }
+        )
+      }
+      
+      uid = Buffer.from(realUserId, 'utf-8').toString('base64')
       dom = body.domain
       url = body.url
       ref = body.referrer
