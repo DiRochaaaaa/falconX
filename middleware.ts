@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getSecurityHeaders } from '@/lib/security/cors-config'
+import { rateLimiter, getRequestIdentifier } from '@/lib/security/rate-limiter'
 
 /**
  * Rate limiting simple em memória (para produção usar Redis)
@@ -28,37 +30,66 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function middleware(req: NextRequest) {
-  // Security headers
+  // Security headers para todas as respostas
   const response = NextResponse.next()
+  const securityHeaders = getSecurityHeaders()
+
+  // Aplicar security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
 
   // Permitir assets estáticos sempre (performance)
   if (
     req.nextUrl.pathname.startsWith('/_next') ||
     req.nextUrl.pathname.startsWith('/favicon') ||
-    req.nextUrl.pathname.includes('.')
+    req.nextUrl.pathname.includes('.') ||
+    req.nextUrl.pathname.startsWith('/api/js/') // Scripts gerados
   ) {
     return response
   }
 
-  // Rate limiting por IP
-  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown'
-  if (!checkRateLimit(ip)) {
-    return new NextResponse('Too Many Requests', { status: 429 })
+  // Rate limiting GLOBAL - agora incluindo APIs críticas
+  const identifier = getRequestIdentifier(req)
+  let rateLimitType: 'public' | 'protected' | 'critical' = 'public'
+  
+  // Determinar tipo de rate limit baseado na rota
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    if (req.nextUrl.pathname.includes('plan-limits') || 
+        req.nextUrl.pathname.includes('generate-script')) {
+      rateLimitType = 'critical'
+    } else if (req.nextUrl.pathname.includes('collect') || 
+               req.nextUrl.pathname.includes('detect')) {
+      rateLimitType = 'public'
+    } else {
+      rateLimitType = 'protected'
+    }
   }
 
-  // Security headers
-  response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co"
-  )
+  const rateLimit = rateLimiter.checkLimit(identifier, rateLimitType)
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetTime! - Date.now()) / 1000)
+    
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Too Many Requests',
+        message: 'Rate limit exceeded. Please try again later.',
+        retryAfter
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': retryAfter.toString(),
+          ...securityHeaders
+        }
+      }
+    )
+  }
 
   // Verificar variáveis de ambiente
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('Variáveis de ambiente do Supabase não configuradas!')
+    console.error('❌ Variáveis de ambiente do Supabase não configuradas!')
     return response
   }
 
@@ -69,10 +100,16 @@ export async function middleware(req: NextRequest) {
   })
 
   // Copiar security headers para a resposta final
-  response.headers.forEach((value, key) => {
+  Object.entries(securityHeaders).forEach(([key, value]) => {
     res.headers.set(key, value)
   })
 
+  // Para APIs, não fazer verificação de sessão (cada API gerencia sua auth)
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    return res
+  }
+
+  // Autenticação apenas para rotas do frontend
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -148,13 +185,9 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc)
+     * Match all request paths except for static files
+     * IMPORTANTE: Agora incluindo APIs para rate limiting
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico|woff|woff2|ttf|eot)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico|woff|woff2|ttf|eot)$).*)',
   ],
 }

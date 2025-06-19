@@ -43,7 +43,7 @@ export async function checkCloneLimits(userId: string): Promise<CloneLimitResult
 
     const plan = subscription.plans
     const currentCount = subscription.current_clone_count
-    const limit = subscription.clone_limit
+    const limit = plan.clone_limit
     const extraUsed = subscription.extra_clones_used
     const resetDate = subscription.reset_date
 
@@ -109,7 +109,8 @@ export async function incrementCloneCount(userId: string): Promise<void> {
     // Usar cliente administrativo para bypassar RLS
     const adminClient = supabaseAdmin || supabase
     
-    // Buscar subscription atual
+    // Buscar subscription atual com dados do plano
+    // 🎯 NOVA ABORDAGEM: Usar APENAS plans.clone_limit
     const { data: subscription, error: subError } = await adminClient
       .from('user_subscriptions')
       .select(`
@@ -126,7 +127,7 @@ export async function incrementCloneCount(userId: string): Promise<void> {
 
     const plan = subscription.plans
     const currentCount = subscription.current_clone_count
-    const limit = subscription.clone_limit
+    const limit = plan.clone_limit // 🎯 USAR SEMPRE plans.clone_limit
 
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()

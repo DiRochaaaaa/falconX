@@ -47,6 +47,18 @@ export function clearAllCache() {
   userCaches.clear()
 }
 
+// NOVA: Função para forçar refresh completo dos dados críticos
+export function forceRefreshCriticalData(userId: string) {
+  if (!userId) return
+  
+  const userCache = getUserCache(userId)
+  // Limpar cache de dados que dependem dos limites do plano
+  userCache.delete('recent-detections')
+  userCache.delete('dashboard-stats')
+  
+  console.warn('Cache crítico limpo para userId:', userId.substring(0, 8) + '...')
+}
+
 export function useDataCache<T>(
   key: string,
   queryFn: () => Promise<T>,
@@ -214,7 +226,7 @@ export function useDashboardStats(userId: string) {
         { count: allowedDomainsCount },
         { data: clonesWithVisitors },
         { count: activeActionsCount },
-        // NOVO: Buscar dados reais do plano
+        // 🎯 CORRIGIDO: Buscar dados do plano usando APENAS plans.clone_limit
         { data: planData }
       ] = await Promise.all([
         supabase
@@ -230,14 +242,17 @@ export function useDashboardStats(userId: string) {
           .eq('user_id', userId)
           .eq('is_active', true),
 
-        // Buscar dados REAIS do plano (não contagem bruta)
+        // 🎯 SEMPRE usar plans.clone_limit como fonte da verdade
         supabase
           .from('user_subscriptions')
           .select(`
             current_clone_count,
-            clone_limit,
             extra_clones_used,
-            plans!inner(name, slug)
+            plans!inner(
+              name, 
+              slug,
+              clone_limit
+            )
           `)
           .eq('user_id', userId)
           .eq('status', 'active')

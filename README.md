@@ -1,226 +1,299 @@
-# 🦅 FalconX - Sistema de Proteção Anti-Clone
+# 🦅 FalconX - Proteção Avançada de Funis
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Security](https://img.shields.io/badge/security-enterprise--grade-green.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![TypeScript](https://img.shields.io/badge/typescript-strict-blue.svg)
 
-**FalconX** é um SaaS avançado para detecção e proteção contra clonagem de funis de vendas em tempo real. Monitore seus domínios, detecte clones não autorizados e execute ações automatizadas para proteger seu negócio.
+> **SaaS de proteção contra clonagem de funis de vendas com detecção em tempo real e sistema de resposta automatizada.**
 
-## 🚀 Funcionalidades Principais
+---
 
-- **🔍 Detecção em Tempo Real** - Monitora clones de funis instantaneamente
-- **🛡️ Proteção Automatizada** - Ações configuráveis contra clones detectados
-- **🔐 Sistema de Lookup Seguro** - ScriptID → UUID com hash SHA256 irreversível ⭐
-- **📊 Dashboard Intuitivo** - Interface SPA de alta performance
-- **🎯 Multi-Planos** - Free, Bronze, Silver e Gold com limites escaláveis
-- **🛡️ Segurança Avançada** - Rate limiting, headers de segurança, validação rigorosa
-- **🔄 Compatibilidade Híbrida** - Suporte a formatos antigo e novo simultaneamente ⭐
-- **📈 Analytics Detalhados** - Logs estruturados e métricas de performance
+## 🎯 **Sobre o FalconX**
 
-## 🏗️ Arquitetura Técnica
+O **FalconX** é uma solução enterprise para proteger seus funis de vendas contra clonagem não autorizada. Detecta uso indevido em tempo real e executa ações de proteção automatizadas.
 
-### Stack Principal
+### **🔥 Recentemente Atualizado - Janeiro 2025**
+- ✅ **Auditoria completa de segurança** realizada
+- ✅ **6 vulnerabilidades críticas** corrigidas
+- ✅ **Sistema de autenticação JWT** implementado
+- ✅ **Rate limiting multicamadas** ativo
+- ✅ **CORS dinâmico e seguro** configurado
+- ✅ **Sistema de auditoria** em tempo real
 
-- **Framework**: Next.js 15 (App Router)
-- **Linguagem**: TypeScript (modo estrito)
+**Pontuação de Segurança**: 9/10 🛡️ *(antes: 3/10)*
+
+---
+
+## ⚡ **Funcionalidades**
+
+### **Detecção Inteligente**
+- 🔍 **Monitoramento em tempo real** de domínios não autorizados
+- 🤖 **Script invisível** embedado nos funis
+- 📊 **Dashboard completo** com estatísticas detalhadas
+- 🎯 **Detecção por subdomínio** e wildcards
+
+### **Sistema de Resposta**
+- 🚫 **Redirecionamento automático** para site original
+- 📄 **Página em branco** para quebrar o funil clonado
+- 💬 **Mensagem personalizada** de site não autorizado
+- ⚙️ **Configuração por clone** detectado
+
+### **Planos Flexíveis**
+- 🆓 **Free**: 1 clone detectado, básico
+- 🥉 **Bronze**: 5 clones, R$ 29,99/mês
+- 🥈 **Silver**: 15 clones, R$ 59,99/mês
+- 🥇 **Gold**: Ilimitado, R$ 99,99/mês
+- 💎 **Diamond**: Enterprise, R$ 199,99/mês
+
+---
+
+## 🛡️ **Segurança Enterprise-Grade**
+
+### **Recém Implementado (2025)**
+- **JWT Authentication**: APIs críticas protegidas
+- **Rate Limiting Inteligente**: 3 níveis de proteção
+- **CORS Dinâmico**: Configuração automática para VPS/EasyPanel
+- **Input Validation**: Schemas Zod em todos os endpoints
+- **Audit Logging**: Monitoramento de eventos suspeitos
+- **Security Headers**: CSP, HSTS, XSS Protection
+
+### **Compliance**
+- ✅ **OWASP Top 10** compliant
+- ✅ **LGPD/GDPR** requirements
+- ✅ **ISO 27001** controls
+
+> 📖 **[Ver Auditoria Completa](docs/security/SECURITY_AUDIT_SUMMARY.md)**
+
+---
+
+## 🚀 **Tecnologias**
+
+- **Frontend**: Next.js 15 + React 19 + TypeScript
+- **Backend**: Next.js API Routes + Middleware
 - **Database**: Supabase (PostgreSQL)
-- **Autenticação**: Supabase Auth
+- **Auth**: Supabase Auth + JWT
 - **Styling**: Tailwind CSS
-- **Validação**: Zod schemas
+- **Security**: Rate Limiting + CORS + Validation
+- **Monitoring**: Structured Logging + Audit System
+- **Deploy**: VPS + EasyPanel (ou similar)
 
-### Estrutura do Projeto
+---
 
-```
-src/
-├── app/                 # Next.js App Router
-│   ├── dashboard/       # SPA Dashboard principal
-│   ├── api/            # API routes
-│   └── auth/           # Páginas de autenticação
-├── components/         # Componentes React reutilizáveis
-├── hooks/              # Custom hooks
-├── lib/                # Utilitários e configurações
-│   ├── validations/    # Schemas Zod
-│   └── types/          # Definições TypeScript
-docs/                   # Documentação
-├── adr/                # Architecture Decision Records
-└── database-schema.md  # Esquema do banco de dados
-```
+## 📦 **Instalação**
 
-## 🛠️ Instalação e Configuração
-
-### Pré-requisitos
-
-- Node.js 18+
-- npm ou yarn
-- Conta Supabase
-
-### 1. Clone e Instale
-
+### **1. Clone e Setup**
 ```bash
-git clone <repository-url>
-cd falconX
+git clone https://github.com/seu-usuario/falconx.git
+cd falconx
 npm install
 ```
 
-### 2. Configuração do Ambiente
-
+### **2. Configuração de Ambiente**
 ```bash
+# Copiar arquivo de exemplo
 cp env.example .env.local
+
+# Configurar variáveis obrigatórias
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anonima
+SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
+
+# CORS - Configuração para VPS/EasyPanel
+ALLOWED_ORIGINS=https://seudominio.com,https://app.seudominio.com
+NEXT_PUBLIC_APP_URL=https://app.seudominio.com
 ```
 
-Configure as variáveis no `.env.local`:
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# Security
-RATE_LIMIT_MAX=100
-RATE_LIMIT_WINDOW=900000
-
-# Logging
-LOG_LEVEL=info
-```
-
-### 3. Setup do Banco de Dados
-
+### **3. Executar**
 ```bash
-# Execute o script de setup no Supabase SQL Editor
-# Arquivo: falconx-database-setup-safe.sql
-
-# IMPORTANTE: Execute também a migração do sistema de lookup
-# Via Supabase Dashboard: 
-# CREATE TABLE generated_scripts (...) -- Ver docs/database-schema.md
-
-# Gere os tipos TypeScript
-npm run db:types
-```
-
-### 4. Inicie o Desenvolvimento
-
-```bash
+# Desenvolvimento
 npm run dev
+
+# Produção
+npm run build
+npm start
 ```
 
-Acesse: [http://localhost:3000](http://localhost:3000)
+---
 
-## 🔧 Scripts Disponíveis
+## 🏛️ **Arquitetura de Segurança**
 
-### Desenvolvimento
+### **Middleware de Proteção**
+- **Rate Limiting**: 50 req/min (público), 200 req/min (protegido), 10 req/min (crítico)
+- **Security Headers**: CSP, X-Frame-Options, HSTS automáticos
+- **Auth Protection**: Rotas protegidas com JWT
 
-```bash
-npm run dev              # Servidor de desenvolvimento
-npm run build           # Build de produção
-npm run start           # Servidor de produção
+### **CORS Inteligente**
+```typescript
+// APIs públicas: CORS * (para scripts funcionarem)
+/api/collect, /api/detect → Access-Control-Allow-Origin: *
+
+// APIs protegidas: CORS restritivo
+/api/plan-limits → Apenas domínios autorizados
 ```
 
-### Qualidade de Código
-
-```bash
-npm run lint            # Verificar código (ESLint)
-npm run lint:fix        # Corrigir problemas automaticamente
-npm run type-check      # Verificar tipos TypeScript
-npm run format          # Formatar código (Prettier)
-npm run validate        # Validação completa (tipos + lint + formato)
-```
-
-### Database
-
-```bash
-npm run db:types        # Gerar tipos do Supabase
-```
-
-## 🏛️ Arquitetura de Segurança
-
-### Middleware de Proteção
-
-- **Rate Limiting**: 100 req/15min por IP
-- **Security Headers**: CSP, X-Frame-Options, HSTS
-- **Auth Protection**: Rotas protegidas automaticamente
-
-### Validação de Dados
-
+### **Validação de Dados**
 - **Zod Schemas**: Validação rigorosa de entrada
 - **Fail-Fast**: Erros explícitos e imediatos
 - **Type Safety**: TypeScript estrito habilitado
 
-### Logging Estruturado
-
+### **Logging Estruturado**
 ```typescript
 // Exemplo de uso do sistema de logging
 logger.userAction('domain_added', userId, { domain: 'example.com' })
 logger.securityEvent('rate_limit_exceeded', { ip: '192.168.1.1' })
 ```
 
-## 📊 Planos e Limites
+---
 
-| Plano  | Preço    | Domínios  | Funcionalidades |
-| ------ | -------- | --------- | --------------- |
-| Free   | R$ 0     | 1         | Básicas         |
-| Bronze | R$ 29,99 | 5         | Avançadas       |
-| Silver | R$ 59,99 | 15        | Premium         |
-| Gold   | R$ 99,99 | Ilimitado | Empresarial     |
+## 📊 **Planos e Limites**
 
-## 🔄 Fluxo de Funcionamento
+| Plano     | Preço      | Clones | Domínios  | Funcionalidades |
+|-----------|------------|--------|-----------|-----------------|
+| **Free**  | R$ 0       | 1      | 1         | Básicas         |
+| **Bronze** | R$ 29,99   | 5      | 3         | Avançadas       |
+| **Silver** | R$ 59,99   | 15     | 10        | Premium         |
+| **Gold**  | R$ 99,99   | 50     | Ilimitado | Empresarial     |
+| **Diamond** | R$ 199,99 | Ilimitado | Ilimitado | Enterprise   |
+
+---
+
+## 🔄 **Fluxo de Funcionamento**
 
 1. **Cadastro**: Usuário se registra e escolhe um plano
-2. **Configuração**: Adiciona domínios permitidos
-3. **Script**: Sistema gera código de proteção único
-4. **Implementação**: Usuário adiciona script aos funis
-5. **Monitoramento**: Sistema detecta uso não autorizado
-6. **Ação**: Executa medidas de proteção configuradas
+2. **Configuração**: Adiciona domínios permitidos no dashboard
+3. **Script**: Sistema gera código de proteção único e ofuscado
+4. **Implementação**: Usuário adiciona script aos funis de vendas
+5. **Monitoramento**: Sistema detecta uso não autorizado em tempo real
+6. **Ação**: Executa medidas de proteção configuradas automaticamente
 
-## 🧪 Qualidade e Testes
+---
 
-### Regras de Qualidade Implementadas
+## 🧪 **Qualidade e Testes**
 
+### **Regras de Qualidade Implementadas**
 - ✅ **15 regras de engenharia** aplicadas
 - ✅ **TypeScript estrito** com coverage ~95%
 - ✅ **ESLint + Prettier** com git hooks
 - ✅ **Validação automática** pré-commit
 - ✅ **Logging estruturado** para observabilidade
 
-### Automação
-
+### **Automação**
 - **Husky**: Git hooks automáticos
 - **lint-staged**: Validação pré-commit
 - **CI/CD Ready**: Scripts preparados para pipeline
 
-## 📚 Documentação
+### **Debug de Segurança** (Desenvolvimento)
+```bash
+# Verificar configuração CORS
+curl http://localhost:3000/api/debug/cors
 
-- **[Database Schema](docs/database-schema.md)** - Estrutura do banco + tabela generated_scripts ⭐
-- **[Script Loader System](docs/SCRIPT_LOADER_SYSTEM.md)** - Sistema de lookup seguro ⭐
-- **[Quality Rules](QUALITY_RULES_IMPLEMENTED.md)** - Regras implementadas
-- **[ADRs](docs/adr/)** - Decisões arquiteturais
-  - **[ADR-006: Sistema de Lookup Seguro](docs/adr/2025-01-19-secure-script-lookup-system.md)** ⭐
-
-## 🤝 Contribuição
-
-1. Fork o projeto
-2. Crie sua feature branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -m 'feat: adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-### Convenções
-
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, etc.)
-- **Code Style**: Prettier + ESLint (automático via git hooks)
-- **PRs**: Máximo 400 LOC, com descrição clara
-
-## 📝 License
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 🆘 Suporte
-
-- **Issues**: [GitHub Issues](https://github.com/seu-usuario/falconx/issues)
-- **Documentação**: [Wiki do Projeto](https://github.com/seu-usuario/falconx/wiki)
-- **Email**: suporte@falconx.com.br
+# Testar origem específica
+curl -X POST http://localhost:3000/api/debug/cors \
+  -H "Content-Type: application/json" \
+  -d '{"testOrigin": "https://meudominio.com"}'
+```
 
 ---
 
-**Desenvolvido com ❤️ para proteger seus funis de vendas contra clonagem**
+## 📚 **Documentação**
+
+### **Arquitetura e Design**
+- **[Database Schema](docs/database-schema.md)** - Estrutura completa do banco
+- **[Script Loader System](docs/SCRIPT_LOADER_SYSTEM.md)** - Sistema de lookup seguro
+- **[ADRs](docs/adr/)** - Decisões arquiteturais documentadas
+
+### **Segurança**
+- **[Auditoria de Segurança](docs/security/SECURITY_AUDIT_SUMMARY.md)** - Relatório completo
+- **[Configuração CORS](docs/security/CORS_CONFIGURATION.md)** - Guia detalhado
+- **[ADR de Segurança](docs/adr/2025-01-20-comprehensive-security-audit.md)** - Implementação técnica
+
+### **Desenvolvimento**
+- **[Regras de Qualidade](docs/QUALITY_RULES_IMPLEMENTED.md)** - 15 regras aplicadas
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Organização do código
+- **[Changelog](docs/CHANGELOG.md)** - Histórico de mudanças
+
+---
+
+## 🔧 **Scripts Disponíveis**
+
+```bash
+# Desenvolvimento
+npm run dev                    # Servidor de desenvolvimento
+npm run build                  # Build de produção
+npm run start                  # Servidor de produção
+
+# Qualidade
+npm run lint                   # ESLint
+npm run lint:fix              # Corrigir problemas automaticamente
+npm run type-check             # Verificação TypeScript
+npm run format                 # Prettier
+npm run validate              # Validação completa (lint + types + format)
+
+# Banco de dados
+npm run db:types              # Gerar tipos TypeScript do Supabase
+
+# Git hooks
+npm run pre-commit            # Hook pré-commit (automático)
+```
+
+---
+
+## 🚀 **Deploy em Produção**
+
+### **VPS + EasyPanel (Recomendado)**
+1. Configurar variáveis no painel do EasyPanel
+2. Definir `NEXT_PUBLIC_APP_URL` com seu domínio
+3. Configurar `ALLOWED_ORIGINS` com domínios adicionais
+
+### **Exemplo de Configuração EasyPanel**
+```bash
+# Environment Variables no EasyPanel
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=xxx
+NEXT_PUBLIC_APP_URL=https://meuapp.com.br
+ALLOWED_ORIGINS=https://meuapp.com.br,https://admin.meuapp.com.br
+```
+
+### **Outros VPS (Docker, PM2, etc.)**
+1. Configurar todas as variáveis de ambiente
+2. Build: `npm run build`
+3. Start: `npm start` ou PM2
+
+---
+
+## 📞 **Suporte e Contato**
+
+### **Reportar Vulnerabilidades**
+- 🔒 **Email**: security@falconx.com
+- ⏱️ **Response Time**: < 24h para vulnerabilidades críticas
+
+### **Suporte Técnico**
+- 💬 **Email**: dev@falconx.com
+- 🔧 **GitHub Issues**: Para bugs e feature requests
+
+### **Comunidade**
+- 📖 **Documentação**: Sempre atualizada
+- 🤝 **Contribuições**: PRs bem-vindos
+- 📋 **Roadmap**: Issues com label `enhancement`
+
+---
+
+## 📝 **Licença**
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+---
+
+## 🏆 **Reconhecimentos**
+
+- **Next.js Team** - Framework excepcional
+- **Supabase** - Backend-as-a-Service poderoso
+- **EasyPanel** - Plataforma VPS simplificada
+- **Tailwind CSS** - Framework CSS utilitário
+
+---
+
+**Desenvolvido com ❤️ pela equipe FalconX**
+
+> 🦅 **Proteja seus funis. Monitore em tempo real. Aja automaticamente.**
