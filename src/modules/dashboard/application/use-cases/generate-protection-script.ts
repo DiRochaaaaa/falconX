@@ -1,10 +1,39 @@
+import { createHash } from 'crypto'
+
+/**
+ * Gera script ID único baseado no userId
+ */
+function generateScriptId(userId: string): string {
+  const SECRET_KEY = process.env.SCRIPT_SECRET_KEY || 'falconx-secret-2025'
+  const hash = createHash('sha256')
+    .update(userId + SECRET_KEY)
+    .digest('hex')
+  return `fx_${hash.substring(0, 12)}`
+}
+
 /**
  * Gera script de proteção personalizado para o usuário
+ * NOVA VERSÃO: Script loader minimalista + arquivo JS externo
  * @param userId - ID do usuário
  * @param baseUrl - URL base da aplicação
- * @returns Script de proteção completo
+ * @returns Script de proteção compacto
  */
 export function generateProtectionScript(userId: string, baseUrl: string): string {
+  const scriptId = generateScriptId(userId)
+
+  // Script loader super compacto - apenas 1 linha!
+  const loaderScript = `<script src="${baseUrl}/api/js/${scriptId}.js" async defer></script>`
+
+  return loaderScript
+}
+
+/**
+ * Gera script inline como fallback (para comparação)
+ * @param userId - ID do usuário
+ * @param baseUrl - URL base da aplicação
+ * @returns Script inline completo (versão antiga)
+ */
+export function generateLegacyProtectionScript(userId: string, baseUrl: string): string {
   return `
 <script>
 (function(){
@@ -83,3 +112,6 @@ export function generateProtectionScript(userId: string, baseUrl: string): strin
 </script>
   `.trim()
 }
+
+// Exportar função utilitária para uso em outras partes do sistema
+export { generateScriptId }
