@@ -278,6 +278,7 @@ export function useRecentDetections(userId: string) {
         ip_address: 'N/A', // Não disponível na tabela detected_clones
         slug_used: '/', // Página principal por padrão
         visitor_count: clone.detection_count || 0,
+        unique_visitors: clone.unique_visitors_count || 0,
         session_duration: 0,
         referrer_url: null,
       }))

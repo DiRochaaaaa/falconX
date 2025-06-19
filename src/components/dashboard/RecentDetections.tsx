@@ -11,6 +11,7 @@ interface Detection {
   ip_address: string
   slug_used?: string
   visitor_count?: number
+  unique_visitors?: number
   referrer_url?: string | null
   session_duration?: number
 }
@@ -42,24 +43,28 @@ function DetectionItem({ detection }: { detection: Detection }) {
     return detection.visitor_count || 0
   }
 
-  const getRiskLevel = (detection: Detection) => {
-    const accessCount = getVisitorCount(detection)
+  const getUniqueVisitors = (detection: Detection) => {
+    return detection.unique_visitors || 0
+  }
 
-    if (accessCount === 0) {
+  const getRiskLevel = (detection: Detection) => {
+    const uniqueVisitors = getUniqueVisitors(detection)
+
+    if (uniqueVisitors === 0) {
       return {
         label: 'Baixo',
         color: 'bg-green-500',
         textColor: 'text-green-400',
         percentage: 25,
       }
-    } else if (accessCount < 50) {
+    } else if (uniqueVisitors < 10) {
       return {
         label: 'Médio',
         color: 'bg-yellow-500',
         textColor: 'text-yellow-400',
         percentage: 50,
       }
-    } else if (accessCount < 200) {
+    } else if (uniqueVisitors < 50) {
       return {
         label: 'Alto',
         color: 'bg-gradient-to-r from-yellow-500 to-red-500',
@@ -101,13 +106,22 @@ function DetectionItem({ detection }: { detection: Detection }) {
           {/* Informações de acesso e risco */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-xs">
-              {getVisitorCount(detection) > 0 && (
-                <div className="flex items-center space-x-1">
-                  <Icons.User className="h-3 w-3 text-green-400" />
-                  <span className="font-semibold text-green-300">
-                    {getVisitorCount(detection).toLocaleString()}
-                  </span>
-                  <span className="text-gray-500">acessos</span>
+              {(getVisitorCount(detection) > 0 || getUniqueVisitors(detection) > 0) && (
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <Icons.User className="h-3 w-3 text-blue-400" />
+                    <span className="font-semibold text-blue-300">
+                      {getUniqueVisitors(detection).toLocaleString()}
+                    </span>
+                    <span className="text-gray-500">únicos</span>
+                  </div>
+                  <span className="text-gray-600">|</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="font-semibold text-green-300">
+                      {getVisitorCount(detection).toLocaleString()}
+                    </span>
+                    <span className="text-gray-500">total</span>
+                  </div>
                 </div>
               )}
               <div className="flex items-center space-x-1">
@@ -130,11 +144,13 @@ function DetectionItem({ detection }: { detection: Detection }) {
             </div>
           </div>
 
-          {/* Alerta para alto volume */}
-          {getVisitorCount(detection) > 100 && (
+          {/* Alerta para alto volume baseado em visitantes únicos */}
+          {getUniqueVisitors(detection) > 10 && (
             <div className="mt-2 flex items-center space-x-1">
               <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500"></div>
-              <span className="text-xs font-medium text-red-400">Alto volume de tráfego</span>
+              <span className="text-xs font-medium text-red-400">
+                Alto impacto - {getUniqueVisitors(detection)} visitantes únicos
+              </span>
             </div>
           )}
         </div>
