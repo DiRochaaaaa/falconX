@@ -1,19 +1,59 @@
-import { generateScriptId } from '@/lib/script-utils'
-
 /**
- * Gera script de proteção personalizado para o usuário
- * NOVA VERSÃO: Script loader minimalista + arquivo JS externo
- * @param userId - ID do usuário
+ * Gera script de proteção via API backend
+ * NOVA VERSÃO: Chama API route segura que roda no servidor
+ * @param userId - ID do usuário (não usado diretamente)
  * @param baseUrl - URL base da aplicação
  * @returns Script de proteção compacto
  */
-export function generateProtectionScript(userId: string, baseUrl: string): string {
-  const scriptId = generateScriptId(userId)
+export async function generateProtectionScript(userId: string, baseUrl: string): Promise<string> {
+  try {
+    // ✅ CHAMAR API ROUTE SEGURA (servidor)
+    const response = await fetch('/api/generate-script', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await getAuthToken()}`
+      },
+      body: JSON.stringify({ baseUrl })
+    })
 
-  // Script loader super compacto - apenas 1 linha!
-  const loaderScript = `<script src="${baseUrl}/api/js/${scriptId}" async defer></script>`
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to generate script')
+    }
 
-  return loaderScript
+    const data = await response.json()
+    return data.script
+
+  } catch (error) {
+    console.error('❌ Erro ao gerar script:', error)
+    
+    // Fallback: gerar script básico sem salvar no banco
+    const fallbackScriptId = 'fx_temp_' + Math.random().toString(36).substring(2, 8)
+    return `<script src="${baseUrl}/api/js/${fallbackScriptId}" async defer></script>`
+  }
+}
+
+/**
+ * Obtém token de autenticação do Supabase
+ * @returns Token JWT ou throws error
+ */
+async function getAuthToken(): Promise<string> {
+  // Verificar se estamos no browser
+  if (typeof window === 'undefined') {
+    throw new Error('getAuthToken só pode ser chamado no browser')
+  }
+
+  // Importar dinamicamente para evitar problemas SSR
+  const { supabase } = await import('@/lib/supabase')
+  
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error || !session?.access_token) {
+    throw new Error('Usuário não autenticado')
+  }
+
+  return session.access_token
 }
 
 /**

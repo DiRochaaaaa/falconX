@@ -26,10 +26,8 @@ export default function ScriptsSection({ user }: ScriptsSectionProps) {
 
     setIsGenerating(true)
     try {
-      // Simular geração de script
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const script = generateProtectionScript(user.id, window.location.origin)
+      // ✅ AGORA COM INSERÇÃO NO BANCO
+      const script = await generateProtectionScript(user.id, window.location.origin)
       const legacy = generateLegacyProtectionScript(user.id, window.location.origin)
 
       setGeneratedScript(script)
