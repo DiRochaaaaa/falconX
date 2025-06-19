@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 
 export default function TestAuth() {
-  const { user, profile, loading, initialized, error, isAuthenticated } = useAuth()
+  const { user, profile, loading, initialized, error } = useAuth()
+  const isAuthenticated = !!user && initialized
   const router = useRouter()
 
   return (
@@ -78,7 +79,7 @@ export default function TestAuth() {
                 </div>
                 <div>
                   <span className="text-gray-400">Plano:</span>
-                  <p className="capitalize text-white">{profile.plan_type}</p>
+                  <p className="capitalize text-white">{profile.plan?.slug}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Email:</span>
@@ -118,7 +119,7 @@ export default function TestAuth() {
                   ? {
                       id: profile.id,
                       full_name: profile.full_name,
-                      plan_type: profile.plan_type,
+                      plan_slug: profile.plan?.slug,
                     }
                   : null,
                 loading,

@@ -22,7 +22,6 @@ export const DomainSchema = z.object({
 export const UserProfileSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').optional(),
   email: z.string().email('Email inválido'),
-  plan_type: z.enum(['free', 'bronze', 'silver', 'gold']).default('free'),
 })
 
 /**
@@ -89,3 +88,45 @@ export function validateOrThrow<T>(schema: z.ZodSchema<T>, data: unknown): T {
 
   return result.data
 }
+
+// Schema para validação de perfil (sem plan_type)
+export const profileSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  full_name: z.string().nullable(),
+  avatar_url: z.string().url().nullable(),
+  api_key: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+// Schema para validação de plano
+export const planSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  slug: z.enum(['free', 'bronze', 'silver', 'gold', 'diamond']),
+  price: z.number(),
+  clone_limit: z.number(),
+  extra_clone_price: z.number(),
+  features: z.any(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+// Schema para validação de assinatura
+export const subscriptionSchema = z.object({
+  id: z.number(),
+  user_id: z.string().uuid(),
+  plan_id: z.number(),
+  status: z.enum(['active', 'expired', 'cancelled', 'pending']),
+  current_clone_count: z.number(),
+  clone_limit: z.number(),
+  extra_clones_used: z.number(),
+  reset_date: z.string(),
+  started_at: z.string(),
+  expires_at: z.string().nullable(),
+  webhook_data: z.any(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})

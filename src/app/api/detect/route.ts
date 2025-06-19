@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { checkCloneLimits, incrementCloneCount } from '@/modules/dashboard/application/use-cases/check-clone-limits'
 
 // Rate limiting simples em memória
 interface RateLimitEntry {
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
       currentUrl?: string
       referrer?: string
       userAgent?: string
+      action?: string
     }
 
     let body: RequestBody
@@ -82,7 +84,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'JSON inválido' }, { status: 400, headers: corsHeaders })
     }
 
-    const { userId, currentDomain, currentUrl, referrer, userAgent } = body
+    const { userId, currentDomain, currentUrl, referrer, userAgent, action } = body
+
+    // NOVA AÇÃO: Buscar total de clones detectados
+    if (action === 'get_total_detected') {
+      try {
+        if (!userId) {
+          return NextResponse.json({ error: 'userId é obrigatório' }, { status: 400 })
+        }
+
+        const { count, error: countError } = await supabaseAdmin
+          .from('detected_clones')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+
+        if (countError) {
+          console.error('Erro ao contar clones:', countError)
+          return NextResponse.json({ error: 'Erro ao buscar dados' }, { status: 500 })
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          total: count || 0 
+        })
+      } catch (error) {
+        console.error('Erro na ação get_total_detected:', error)
+        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+      }
+    }
 
     if (!userId || !currentDomain) {
       return NextResponse.json(
@@ -182,7 +211,11 @@ export async function POST(request: NextRequest) {
         cloneId = existingClone.id
         logger.info('Clone atualizado', { cloneId, newCount: existingClone.detection_count + 1 })
       } else {
-        // Novo clone - inserir (usar primeiro domínio autorizado como original)
+        // Novo clone - verificar limites mas SEMPRE salvar
+        const limitStatus = await checkCloneLimits(userId)
+        const withinLimit = limitStatus.canDetectClone
+        
+        // SEMPRE salvar o clone no banco (para mostrar pressão no upgrade)
         const originalDomain =
           authorizedDomains.length > 0 ? authorizedDomains[0] : 'domain-not-configured'
 
@@ -195,7 +228,7 @@ export async function POST(request: NextRequest) {
             detection_count: 1,
             first_detected: new Date().toISOString(),
             last_seen: new Date().toISOString(),
-            is_active: true,
+            is_active: true, // sempre ativo para tracking
           })
           .select('id')
           .single()
@@ -205,6 +238,32 @@ export async function POST(request: NextRequest) {
         }
 
         cloneId = newClone?.id
+
+        // Verificar se pode incrementar contador (diferente de salvar)
+        if (withinLimit) {
+          // Pode detectar - incrementa contador normalmente
+          await incrementCloneCount(userId)
+          logger.info('Clone registrado e contabilizado', { userId, cloneId })
+        } else {
+          // Limite atingido (plano gratuito) = salva mas não conta
+          logger.warn('Clone registrado mas bloqueado (upgrade needed)', { userId, cloneId })
+          
+          // Retornar resposta especial indicando que salvou mas não conta
+          return NextResponse.json(
+            {
+              status: 'clone_detected_blocked',
+              message: 'Clone detectado mas não contabilizado - limite atingido',
+              cloneId: cloneId,
+              currentCount: limitStatus.currentCount,
+              limit: limitStatus.limit,
+              planName: limitStatus.planName,
+              resetDate: limitStatus.resetDate,
+              upgradeRequired: true,
+              savedForTracking: true // indica que salvou para mostrar no dashboard
+            },
+            { status: 200, headers: corsHeaders } // 200 mas com aviso
+          )
+        }
       }
 
       logger.info('Clone registrado com sucesso', { cloneId })

@@ -5,7 +5,7 @@ import { Icons } from '@/components/Icons'
 import { useAllowedDomains } from '@/hooks/useDataCache'
 import {
   User,
-  UserProfile,
+  DashboardUser,
   getPlanLimits,
   validateDomain,
   LoadingSkeleton,
@@ -15,7 +15,7 @@ import {
 
 interface DomainsSectionProps {
   user: User | null
-  profile: UserProfile | null
+  profile: DashboardUser | null
 }
 
 export default function DomainsSection({ user, profile }: DomainsSectionProps) {
@@ -30,7 +30,7 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
     refresh: refreshDomains,
   } = useAllowedDomains(user?.id || '')
 
-  const planLimits = getPlanLimits(profile?.plan_type)
+  const planLimits = getPlanLimits(profile?.plan?.slug)
   const canAddMore = planLimits.domains === -1 || (domains?.length || 0) < planLimits.domains
   const domainService = new DomainService()
 
@@ -54,7 +54,7 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
 
     if (!canAddMore) {
       setError(
-        `Limite de ${planLimits.domains} domínios atingido para o plano ${profile?.plan_type || 'free'}`
+                      `Limite de ${planLimits.domains} domínios atingido para o plano ${profile?.plan?.name ?? 'gratuito'}`
       )
       return
     }

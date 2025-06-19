@@ -133,10 +133,10 @@ export default function StatsCards({ stats, loading, planLimits }: StatsCardsPro
       <StatCard
         icon={Icons.Warning}
         title="Clones Detectados"
-        value={loading ? '...' : stats?.detectedClones || 0}
+        value={loading ? '...' : `${stats?.detectedClones || 0}${planLimits.domains > 0 ? `/${planLimits.domains}` : ''}`}
         loading={loading}
         color="red"
-        subtitle="Total detectado"
+        subtitle={planLimits.domains > 0 ? `Limite: ${planLimits.domains} clones/mês` : 'Ilimitado'}
         trend={stats?.detectedClones && stats.detectedClones > 0 ? 'up' : 'neutral'}
       />
 

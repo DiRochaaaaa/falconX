@@ -1,15 +1,12 @@
+import { ProfileWithPlan } from '@/lib/types/database'
+
 export interface User {
   id: string
   email?: string
   full_name?: string
 }
 
-export interface UserProfile extends User {
-  api_key?: string
-  plan_id?: number
-  plan_type?: 'free' | 'bronze' | 'silver' | 'gold'
-  created_at: string
-}
+// Removido - agora usamos DashboardUser que estende ProfileWithPlan
 
 // Parâmetros de tracking completos para diferentes plataformas de ads
 export interface TriggerParam {
@@ -257,7 +254,7 @@ export interface DomainData {
 }
 
 export interface PlanLimits {
-  domains: number
+  domains: number // manter compatibilidade - representa limite de clones detectáveis
   price: number
 }
 
@@ -269,3 +266,13 @@ export type Section =
   | 'profile'
   | 'settings'
   | 'billing'
+
+// Tipos de domínio para o dashboard
+export interface DashboardUser extends ProfileWithPlan {
+  // Herda todas as propriedades de ProfileWithPlan
+  // Inclui: profile data + subscription + plan info
+  dashboardSpecific?: boolean // Adicionar propriedade específica para evitar interface vazia
+}
+
+// Tipos de planos disponíveis
+export type PlanType = 'free' | 'bronze' | 'silver' | 'gold' | 'diamond'

@@ -1,7 +1,7 @@
-import { UserProfile } from '@/modules/dashboard'
+import { DashboardUser } from '@/modules/dashboard/domain/types'
 
 interface BillingSectionProps {
-  profile: UserProfile | null
+  profile: DashboardUser | null
 }
 
 export default function BillingSection({ profile }: BillingSectionProps) {
@@ -14,37 +14,49 @@ export default function BillingSection({ profile }: BillingSectionProps) {
 
       <div className="glass rounded-xl p-6">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-white">Plano Atual</h3>
-              <p className="text-gray-400">Você está no plano {profile?.plan_type || 'Free'}</p>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Plano Atual</h3>
+            <p className="text-gray-400">Você está no plano {profile?.plan?.name ?? 'Gratuito'}</p>
+            <div className="bg-gray-800 p-4 rounded-lg mt-4">
+              {profile?.plan?.name ?? 'Gratuito'}
             </div>
-            <span className="rounded-full bg-green-500/20 px-3 py-1 text-sm font-medium capitalize text-green-400">
-              {profile?.plan_type || 'Free'}
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="glass-strong rounded-lg p-4 text-center">
               <h4 className="mb-2 font-medium text-white">Bronze</h4>
-              <p className="mb-1 text-2xl font-bold text-green-400">R$ 29,99</p>
-              <p className="mb-4 text-sm text-gray-400">5 domínios</p>
+              <p className="mb-1 text-2xl font-bold text-green-400">R$ 39,90</p>
+              <p className="mb-4 text-sm text-gray-400">5 clonadores/mês</p>
+              <button className="btn btn-primary w-full">Upgrade</button>
+            </div>
+
+            <div className="glass-strong rounded-lg p-4 text-center">
+              <h4 className="mb-2 font-medium text-white">Prata</h4>
+              <p className="mb-1 text-2xl font-bold text-green-400">R$ 79,90</p>
+              <p className="mb-4 text-sm text-gray-400">10 clonadores/mês</p>
               <button className="btn btn-primary w-full">Upgrade</button>
             </div>
 
             <div className="glass-strong rounded-lg border border-green-500/30 p-4 text-center">
-              <h4 className="mb-2 font-medium text-white">Silver</h4>
-              <p className="mb-1 text-2xl font-bold text-green-400">R$ 59,99</p>
-              <p className="mb-4 text-sm text-gray-400">15 domínios</p>
+              <h4 className="mb-2 font-medium text-white">Ouro</h4>
+              <p className="mb-1 text-2xl font-bold text-green-400">R$ 149,90</p>
+              <p className="mb-4 text-sm text-gray-400">20 clonadores/mês</p>
               <button className="btn btn-primary w-full">Upgrade</button>
             </div>
 
             <div className="glass-strong rounded-lg p-4 text-center">
-              <h4 className="mb-2 font-medium text-white">Gold</h4>
-              <p className="mb-1 text-2xl font-bold text-green-400">R$ 99,99</p>
-              <p className="mb-4 text-sm text-gray-400">Ilimitado</p>
+              <h4 className="mb-2 font-medium text-white">Diamante</h4>
+              <p className="mb-1 text-2xl font-bold text-green-400">R$ 299,90</p>
+              <p className="mb-4 text-sm text-gray-400">50 clonadores/mês</p>
               <button className="btn btn-primary w-full">Upgrade</button>
             </div>
+          </div>
+
+          <div className="mt-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4">
+            <p className="text-sm text-yellow-400">
+              <strong>💡 Pay-as-you-go:</strong> Nos planos pagos, se ultrapassar o limite, 
+              pague apenas R$ 1,00 por clonador adicional detectado.
+            </p>
           </div>
         </div>
       </div>

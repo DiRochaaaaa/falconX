@@ -166,17 +166,17 @@ export default function Home() {
           <div className="animate-fade-in mb-16 text-center">
             <h2 className="mb-4 text-4xl font-bold text-white">Planos para Todos os Tamanhos</h2>
             <p className="text-xl text-gray-400">
-              Escolha o plano ideal para proteger seus funnels
+              Escolha o plano ideal para proteger seus funnels - todas as funcionalidades em todos os planos
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
             {/* Free Plan */}
             <div className="card card-hover animate-fade-in">
               <div className="text-center">
                 <h3 className="mb-2 text-xl font-semibold text-white">Gratuito</h3>
                 <div className="mb-4 text-3xl font-bold text-green-400">
-                  $0<span className="text-sm text-gray-400">/mês</span>
+                  R$0<span className="text-sm text-gray-400">/mês</span>
                 </div>
                 <ul className="mb-6 space-y-3">
                   <li className="flex items-center text-gray-300">
@@ -193,7 +193,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    1 domínio
+                    1 clonador/mês
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -209,7 +209,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Detecção básica
+                    Todas as funcionalidades
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -225,9 +225,10 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Dashboard
+                    Dashboard completo
                   </li>
                 </ul>
+                
                 <Link href="/register" className="btn-secondary">
                   Começar Grátis
                 </Link>
@@ -239,7 +240,7 @@ export default function Home() {
               <div className="text-center">
                 <h3 className="mb-2 text-xl font-semibold text-white">Bronze</h3>
                 <div className="mb-4 text-3xl font-bold text-green-400">
-                  $29<span className="text-sm text-gray-400">/mês</span>
+                  R$39<span className="text-sm text-gray-400">/mês</span>
                 </div>
                 <ul className="mb-6 space-y-3">
                   <li className="flex items-center text-gray-300">
@@ -256,7 +257,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    5 domínios
+                    5 clonadores/mês
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -272,7 +273,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Detecção avançada
+                    R$1 por extra
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -288,45 +289,26 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Alertas por email
-                  </li>
-                  <li className="flex items-center text-gray-300">
-                    <svg
-                      className="mr-2 h-4 w-4 text-green-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    Suporte prioritário
+                    Todas as funcionalidades
                   </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
-                  Escolher Bronze
+                  Começar
                 </Link>
               </div>
             </div>
 
             {/* Silver Plan */}
-            <div
-              className="card card-hover animate-fade-in relative border-2 border-green-500/50"
-              style={{ animationDelay: '0.2s' }}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-                <span className="bg-gradient-green rounded-full px-3 py-1 text-xs font-bold text-white">
-                  MAIS POPULAR
+            <div className="card card-hover animate-fade-in border-2 border-green-500/30" style={{ animationDelay: '0.2s' }}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-green-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                  POPULAR
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="mb-2 text-xl font-semibold text-white">Silver</h3>
+                <h3 className="mb-2 text-xl font-semibold text-white">Prata</h3>
                 <div className="mb-4 text-3xl font-bold text-green-400">
-                  $59<span className="text-sm text-gray-400">/mês</span>
+                  R$79<span className="text-sm text-gray-400">/mês</span>
                 </div>
                 <ul className="mb-6 space-y-3">
                   <li className="flex items-center text-gray-300">
@@ -343,7 +325,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    15 domínios
+                    10 clonadores/mês
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -359,7 +341,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Detecção premium
+                    R$1 por extra
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -375,27 +357,11 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Ações automáticas
-                  </li>
-                  <li className="flex items-center text-gray-300">
-                    <svg
-                      className="mr-2 h-4 w-4 text-green-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    API completa
+                    Todas as funcionalidades
                   </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
-                  Escolher Silver
+                  Começar
                 </Link>
               </div>
             </div>
@@ -403,9 +369,9 @@ export default function Home() {
             {/* Gold Plan */}
             <div className="card card-hover animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <div className="text-center">
-                <h3 className="mb-2 text-xl font-semibold text-white">Gold</h3>
+                <h3 className="mb-2 text-xl font-semibold text-white">Ouro</h3>
                 <div className="mb-4 text-3xl font-bold text-green-400">
-                  $99<span className="text-sm text-gray-400">/mês</span>
+                  R$149<span className="text-sm text-gray-400">/mês</span>
                 </div>
                 <ul className="mb-6 space-y-3">
                   <li className="flex items-center text-gray-300">
@@ -422,7 +388,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Domínios ilimitados
+                    20 clonadores/mês
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -438,7 +404,7 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Detecção enterprise
+                    R$1 por extra
                   </li>
                   <li className="flex items-center text-gray-300">
                     <svg
@@ -454,29 +420,87 @@ export default function Home() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    Suporte 24/7
-                  </li>
-                  <li className="flex items-center text-gray-300">
-                    <svg
-                      className="mr-2 h-4 w-4 text-green-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    Consultoria dedicada
+                    Todas as funcionalidades
                   </li>
                 </ul>
                 <Link href="/register" className="btn-primary">
-                  Escolher Gold
+                  Começar
                 </Link>
               </div>
+            </div>
+
+            {/* Diamond Plan */}
+            <div className="card card-hover animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="text-center">
+                <h3 className="mb-2 text-xl font-semibold text-white">Diamante</h3>
+                <div className="mb-4 text-3xl font-bold text-green-400">
+                  R$299<span className="text-sm text-gray-400">/mês</span>
+                </div>
+                <ul className="mb-6 space-y-3">
+                  <li className="flex items-center text-gray-300">
+                    <svg
+                      className="mr-2 h-4 w-4 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    50 clonadores/mês
+                  </li>
+                  <li className="flex items-center text-gray-300">
+                    <svg
+                      className="mr-2 h-4 w-4 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    R$1 por extra
+                  </li>
+                  <li className="flex items-center text-gray-300">
+                    <svg
+                      className="mr-2 h-4 w-4 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Todas as funcionalidades
+                  </li>
+                </ul>
+                <Link href="/register" className="btn-primary">
+                  Começar
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <div className="inline-flex items-center rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-6 py-4">
+              <svg className="mr-3 h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-yellow-400">
+                <strong>Flexibilidade Total:</strong> Se ultrapassar seu limite mensal, pague apenas R$ 1,00 por clonador adicional detectado nos planos pagos.
+              </p>
             </div>
           </div>
         </div>

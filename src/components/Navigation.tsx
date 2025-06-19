@@ -137,8 +137,8 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
                     <div className="text-sm font-medium text-white">
                       {profile?.full_name || profile?.email}
                     </div>
-                    <div className="text-xs capitalize text-green-400">
-                      {profile?.plan_type || 'free'}
+                    <div className="px-4 py-2 text-sm text-gray-500 border-b">
+                      {profile?.plan?.slug ?? 'free'}
                     </div>
                   </div>
                   <svg

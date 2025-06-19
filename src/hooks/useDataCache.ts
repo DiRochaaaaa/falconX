@@ -212,16 +212,15 @@ export function useDashboardStats(userId: string) {
 
       const [
         { count: allowedDomainsCount },
-        { data: uniqueClones },
         { data: clonesWithVisitors },
         { count: activeActionsCount },
+        // NOVO: Buscar dados reais do plano
+        { data: planData }
       ] = await Promise.all([
         supabase
           .from('allowed_domains')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId),
-
-        supabase.from('detected_clones').select('original_domain').eq('user_id', userId),
 
         supabase.from('detected_clones').select('unique_visitors_count').eq('user_id', userId),
 
@@ -230,15 +229,31 @@ export function useDashboardStats(userId: string) {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('is_active', true),
+
+        // Buscar dados REAIS do plano (não contagem bruta)
+        supabase
+          .from('user_subscriptions')
+          .select(`
+            current_clone_count,
+            clone_limit,
+            extra_clones_used,
+            plans!inner(name, slug)
+          `)
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .single()
       ])
 
-      const uniqueClonesCount = new Set(uniqueClones?.map(c => c.original_domain) || []).size
       const totalUniqueVisitors =
         clonesWithVisitors?.reduce((sum, clone) => sum + (clone.unique_visitors_count || 0), 0) || 0
 
+      // Usar dados REAIS do plano ao invés de contagem bruta
+      const subscription = planData || null
+      const actualClonesUsed = subscription ? subscription.current_clone_count + subscription.extra_clones_used : 0
+
       return {
         allowedDomains: allowedDomainsCount || 0,
-        detectedClones: uniqueClonesCount || 0,
+        detectedClones: actualClonesUsed, // CORRIGIDO: Usar dados do plano
         uniqueVisitors: totalUniqueVisitors,
         activeActions: activeActionsCount || 0,
       }

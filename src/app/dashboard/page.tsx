@@ -5,13 +5,15 @@ import { useDashboardStats, useRecentDetections } from '@/hooks/useDataCache'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Navigation from '@/components/Navigation'
 import { Icons } from '@/components/Icons'
-import { useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useEffect } from 'react'
+import PlanLimitStatus from '@/components/dashboard/PlanLimitStatus'
+import BlockedClonesAlert from '@/components/dashboard/BlockedClonesAlert'
 
 // Modular imports
 import {
   Section,
   User,
-  UserProfile,
+  DashboardUser,
   LoadingSkeleton,
   ErrorMessage,
   ActionsSection,
@@ -29,7 +31,9 @@ const SettingsSection = lazy(() => import('./sections/SettingsSection'))
 const BillingSection = lazy(() => import('./sections/BillingSection'))
 
 // Main Dashboard Section Component
-function DashboardSection({ user, profile }: { user: User | null; profile: UserProfile | null }) {
+function DashboardSection({ user, profile, usage }: { user: User | null; profile: DashboardUser | null; usage: any }) {
+  const [blockedClonesCount, setBlockedClonesCount] = useState(0)
+
   const {
     data: stats,
     loading: statsLoading,
@@ -44,14 +48,35 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
     refresh: refreshDetections,
   } = useRecentDetections(user?.id || '')
 
+  // Buscar dados de clones bloqueados
+  useEffect(() => {
+    async function fetchBlockedClones() {
+      if (!user?.id) return
+
+      try {
+        const response = await fetch(`/api/plan-limits?userId=${user.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setBlockedClonesCount(data.usage?.blockedClones || 0)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar clones bloqueados:', error)
+      }
+    }
+
+    fetchBlockedClones()
+  }, [user?.id])
+
   const getPlanLimits = () => {
-    switch (profile?.plan_type) {
+    switch (profile?.plan?.slug) {
       case 'bronze':
-        return { domains: 5, price: 29.99 }
+        return { domains: 5, price: 39.90 }
       case 'silver':
-        return { domains: 15, price: 59.99 }
+        return { domains: 10, price: 79.90 }
       case 'gold':
-        return { domains: -1, price: 99.99 }
+        return { domains: 20, price: 149.90 }
+      case 'diamond':
+        return { domains: 50, price: 299.90 }
       default:
         return { domains: 1, price: 0 }
     }
@@ -59,8 +84,23 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
 
   const planLimits = getPlanLimits()
 
+  const handleUpgrade = () => {
+    // Implementar navegação para billing
+  }
+
   return (
     <div className="bg-gradient-main min-h-screen">
+      {/* Alerta de Clones Bloqueados */}
+      {blockedClonesCount > 0 && (
+        <div className="mb-8">
+          <BlockedClonesAlert
+            user={profile}
+            _limits={planLimits}
+            loading={false}
+          />
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="mb-12">
         <div className="mb-6">
@@ -76,7 +116,7 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
         <div className="flex items-center space-x-4">
           <div className="inline-flex items-center rounded-full bg-gradient-to-r from-green-500/10 to-emerald-600/10 px-4 py-2 text-sm font-medium text-green-400 ring-1 ring-green-500/20 backdrop-blur-sm">
             <Icons.Crown className="mr-2 h-4 w-4" />
-            Plano {profile?.plan_type?.toUpperCase() || 'FREE'}
+                          Plano {profile?.plan?.name?.toUpperCase() ?? 'GRATUITO'}
           </div>
           <div className="inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-500/20">
             <div className="mr-2 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400"></div>
@@ -104,20 +144,34 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Suspense
-            fallback={
-              <>
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="card">
-                    <LoadingSkeleton />
-                  </div>
-                ))}
-              </>
-            }
-          >
-            <StatsCards stats={stats} loading={statsLoading} planLimits={planLimits} />
-          </Suspense>
+        {/* Grid com Status do Plano + Stats */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Status do Plano */}
+          <div className="lg:col-span-1">
+            <PlanLimitStatus 
+              usage={usage}
+              onUpgrade={handleUpgrade}
+            />
+          </div>
+
+          {/* Stats Cards */}
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <Suspense
+                fallback={
+                  <>
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="card">
+                        <LoadingSkeleton />
+                      </div>
+                    ))}
+                  </>
+                }
+              >
+                <StatsCards stats={stats} loading={statsLoading} planLimits={planLimits} />
+              </Suspense>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -156,7 +210,7 @@ function DashboardSection({ user, profile }: { user: User | null; profile: UserP
 }
 
 export default function Dashboard() {
-  const { user, profile } = useAuth()
+  const { user, profile, usage } = useAuth()
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
 
   const handleSectionChange = (section: string) => {
@@ -168,7 +222,7 @@ export default function Dashboard() {
 
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardSection {...sectionProps} />
+        return <DashboardSection {...sectionProps} usage={usage} />
       case 'domains':
         return (
           <Suspense fallback={<LoadingSkeleton className="h-96" />}>
@@ -202,7 +256,7 @@ export default function Dashboard() {
           </Suspense>
         )
       default:
-        return <DashboardSection {...sectionProps} />
+        return <DashboardSection {...sectionProps} usage={usage} />
     }
   }
 

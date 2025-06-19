@@ -2,335 +2,277 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
-import { supabase, UserProfile } from '../lib/supabase'
+import { supabase, getUserPlanInfo } from '@/lib/supabase'
 import { clearUserCache } from './useDataCache'
+import { ProfileWithPlan } from '@/lib/types/database'
+import { PlanUsage } from './usePlanLimits'
 
 /**
- * Hook de autenticação com correção para deadlocks do Supabase
- *
- * CORREÇÃO APLICADA: Fix para loading infinito quando volta para aba
- * - Removido async do callback onAuthStateChange
- * - Adicionado setTimeout para evitar deadlocks conforme documentação oficial
- * - Adicionado timeout de segurança na inicialização
- *
- * Referência: https://supabase.com/docs/guides/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0
+ * Hook de autenticação com dados completos de plano e limites
  */
-
 interface AuthState {
   user: User | null
-  profile: UserProfile | null
+  profile: ProfileWithPlan | null
+  usage: PlanUsage | null // NOVO: dados de uso do plano
   loading: boolean
   initialized: boolean
   error: string | null
 }
 
 export function useAuth() {
+  const mountedRef = useRef(true)
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     profile: null,
+    usage: null,
     loading: true,
     initialized: false,
     error: null,
   })
 
-  const mountedRef = useRef(true)
-  const initializingRef = useRef(false)
-
   const updateAuthState = useCallback((updates: Partial<AuthState>) => {
-    if (!mountedRef.current) return
-    setAuthState(prev => ({ ...prev, ...updates }))
+    if (mountedRef.current) {
+      setAuthState(prev => ({ ...prev, ...updates }))
+    }
   }, [])
 
-  const loadProfile = useCallback(
+  const loadUserProfile = useCallback(
     async (
       userId: string,
-      userEmail?: string,
-      userFullName?: string
-    ): Promise<UserProfile | null> => {
+      _userEmail?: string,
+      _userFullName?: string
+    ): Promise<ProfileWithPlan | null> => {
       if (!mountedRef.current) return null
 
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-
-        if (!mountedRef.current) return null
-
-        if (error && error.code === 'PGRST116') {
-          // Profile não existe - criar profile básico
-          const basicProfile: UserProfile = {
-            id: userId,
-            email: userEmail || '',
-            full_name: userFullName || 'Usuário',
-            plan_type: 'free',
-            api_key: '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+        const profileWithPlan = await getUserPlanInfo(userId)
+        if (profileWithPlan) {
+          // Converter usage para formato do hook
+          const usage: PlanUsage = {
+            currentClones: profileWithPlan.usage.currentClones,
+            cloneLimit: profileWithPlan.usage.cloneLimit,
+            extraClones: profileWithPlan.usage.extraClones,
+            resetDate: profileWithPlan.usage.resetDate,
+            canDetectMore: profileWithPlan.usage.canDetectMore,
+            usageProgress: profileWithPlan.usage.usageProgress,
+            alertLevel: profileWithPlan.usage.usageProgress >= 100 ? 'danger' 
+              : profileWithPlan.usage.usageProgress >= 80 ? 'warning' 
+              : 'success',
+            planInfo: {
+              cloneLimit: profileWithPlan.plan.clone_limit,
+              domainLimit: profileWithPlan.plan.slug === 'free' ? 3 
+                : profileWithPlan.plan.slug === 'bronze' ? 10
+                : profileWithPlan.plan.slug === 'silver' ? 25
+                : -1, // gold e diamond = ilimitado
+              price: profileWithPlan.plan.price,
+              extraClonePrice: profileWithPlan.plan.extra_clone_price,
+              features: {
+                realTimeDetection: true,
+                customActions: profileWithPlan.plan.slug !== 'free',
+                advancedAnalytics: ['silver', 'gold', 'diamond'].includes(profileWithPlan.plan.slug),
+                prioritySupport: ['gold', 'diamond'].includes(profileWithPlan.plan.slug),
+                apiAccess: ['gold', 'diamond'].includes(profileWithPlan.plan.slug),
+              },
+              name: profileWithPlan.plan.name,
+              description: profileWithPlan.plan.slug === 'free' ? 'Ideal para testar o sistema'
+                : profileWithPlan.plan.slug === 'bronze' ? 'Perfeito para pequenos negócios'
+                : profileWithPlan.plan.slug === 'silver' ? 'Para quem está crescendo'
+                : profileWithPlan.plan.slug === 'gold' ? 'Para negócios estabelecidos'
+                : 'Para grandes empresas',
+            },
+            planSlug: profileWithPlan.plan.slug,
+            lastUpdated: profileWithPlan.usage.lastUpdated,
           }
-          updateAuthState({ profile: basicProfile, error: null })
-          return basicProfile
-        } else if (error) {
-          console.error('Erro ao carregar perfil:', error)
-          updateAuthState({ profile: null, error: 'Erro ao carregar perfil' })
-          return null
-        } else {
-          updateAuthState({ profile: data, error: null })
-          return data
+
+          updateAuthState({ profile: profileWithPlan, usage, error: null })
+          return profileWithPlan
         }
+        return null
       } catch (error) {
-        console.error('Erro ao carregar perfil:', error)
-        updateAuthState({ profile: null, error: 'Erro ao carregar perfil' })
+        console.error('Error loading user profile:', error)
+        updateAuthState({ profile: null, usage: null, error: 'Erro ao carregar perfil' })
         return null
       }
     },
     [updateAuthState]
   )
 
-  const initializeAuth = useCallback(async () => {
-    if (!mountedRef.current || initializingRef.current) return
-
-    initializingRef.current = true
-    updateAuthState({ loading: true, error: null })
-
-    // Timeout de segurança para evitar loading infinito
-    const timeoutId = setTimeout(() => {
-      if (initializingRef.current && mountedRef.current) {
-        console.warn('Auth initialization timeout - assuming not authenticated')
-        updateAuthState({
-          user: null,
-          profile: null,
-          loading: false,
-          initialized: true,
-          error: null,
-        })
-        initializingRef.current = false
-      }
-    }, 10000) // 10 segundos timeout
-
-    try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession()
-
-      clearTimeout(timeoutId)
-
-      if (!mountedRef.current) return
-
-      if (error) {
-        console.error('Erro ao verificar sessão inicial:', error)
-        updateAuthState({
-          user: null,
-          profile: null,
-          loading: false,
-          initialized: true,
-          error: 'Erro ao verificar autenticação',
-        })
-        return
-      }
-
-      const user = session?.user ?? null
-      updateAuthState({ user, error: null })
-
-      if (user) {
-        try {
-          await loadProfile(user.id, user.email, user.user_metadata?.full_name)
-        } catch (profileError) {
-          console.error('Erro ao carregar perfil durante inicialização:', profileError)
-          // Continua mesmo se falhar ao carregar perfil
-          updateAuthState({ error: null })
-        }
-      } else {
-        updateAuthState({ profile: null })
-      }
-
-      updateAuthState({
-        loading: false,
-        initialized: true,
-      })
-    } catch (error) {
-      clearTimeout(timeoutId)
-      console.error('Erro na inicialização da autenticação:', error)
-      updateAuthState({
-        user: null,
-        profile: null,
-        loading: false,
-        initialized: true,
-        error: 'Erro na inicialização',
-      })
-    } finally {
-      initializingRef.current = false
+  const refreshUserData = useCallback(async () => {
+    if (authState.user?.id) {
+      await loadUserProfile(authState.user.id, authState.user.email || undefined)
     }
-  }, [updateAuthState, loadProfile])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadUserProfile]) // Remover dependências do authState para evitar loops
 
-  // Efeito de inicialização - executado apenas uma vez
+  // Função de signup atualizada
+  const signUp = useCallback(
+    async (email: string, password: string, fullName: string) => {
+      try {
+        updateAuthState({ loading: true, error: null })
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        })
+
+        if (error) {
+          console.error('Erro no signup:', error)
+          updateAuthState({ error: 'Erro ao criar conta' })
+          return { data: null, error }
+        }
+
+        // Create profile with default free plan subscription
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: data.user.email!,
+              full_name: fullName,
+            })
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError)
+            throw profileError
+          }
+
+          // Create default subscription for free plan
+          const { error: subscriptionError } = await supabase
+            .from('user_subscriptions')
+            .insert({
+              user_id: data.user.id,
+              plan_id: 1, // Free plan ID
+              clone_limit: 1,
+            })
+
+          if (subscriptionError) {
+            console.error('Error creating subscription:', subscriptionError)
+            throw subscriptionError
+          }
+        }
+
+        return data
+      } catch (error) {
+        console.error('Erro no signup:', error)
+        updateAuthState({ error: 'Erro ao criar conta' })
+        return { data: null, error: error as any }
+      }
+    },
+    [updateAuthState]
+  )
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    updateAuthState({ loading: true, error: null })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) {
+      updateAuthState({ error: 'Erro ao fazer login', loading: false })
+      throw error
+    }
+    return data
+  }, [updateAuthState])
+
+  const signOut = useCallback(async () => {
+    updateAuthState({ loading: true })
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      updateAuthState({ error: 'Erro ao fazer logout', loading: false })
+      throw error
+    }
+    
+         // Limpar cache
+     if (authState.user?.id) {
+       clearUserCache(authState.user.id)
+     }
+    updateAuthState({
+      user: null,
+      profile: null,
+      usage: null,
+      loading: false,
+      error: null,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateAuthState])
+
+  // Configurar listeners de autenticação
   useEffect(() => {
+    let mounted = true
     mountedRef.current = true
+
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+
+        if (session?.user) {
+          updateAuthState({ user: session.user })
+          await loadUserProfile(session.user.id, session.user.email || undefined)
+        }
+
+        updateAuthState({ loading: false, initialized: true })
+      } catch (error) {
+        console.error('Erro na inicialização:', error)
+        if (mounted) {
+          updateAuthState({ 
+            loading: false, 
+            initialized: true, 
+            error: 'Erro na inicialização' 
+          })
+        }
+      }
+    }
+
     initializeAuth()
 
-    return () => {
-      mountedRef.current = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Dependência vazia para executar apenas uma vez
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return
 
-  // Efeito para listener de mudanças de auth - separado da inicialização
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mountedRef.current || initializingRef.current) return
+        updateAuthState({ user: session?.user ?? null })
 
-      // Auth state change event
-      const user = session?.user ?? null
-      const previousUserId = authState.user?.id
-
-      // Atualizar estado do usuário imediatamente
-      updateAuthState({ user, error: null })
-
-      // Usar setTimeout para evitar deadlocks conforme documentação do Supabase
-      // https://supabase.com/docs/guides/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0
-      setTimeout(async () => {
-        if (!mountedRef.current) return
-
-        // Lidar com eventos específicos
-        if (event === 'SIGNED_IN' && user) {
-          updateAuthState({ loading: true })
-          try {
-            await loadProfile(user.id, user.email, user.user_metadata?.full_name)
-          } catch (error) {
-            console.error('Erro ao carregar perfil no SIGNED_IN:', error)
-            updateAuthState({ error: 'Erro ao carregar perfil' })
-          }
-          updateAuthState({ loading: false })
-        } else if (event === 'SIGNED_OUT') {
-          updateAuthState({ profile: null, loading: false })
-          // Limpar cache do usuário anterior ao fazer logout
-          if (previousUserId) {
-            clearUserCache(previousUserId)
-          }
-        } else if (event === 'TOKEN_REFRESHED' && user) {
-          // Manter perfil existente, só atualizar user se necessário
-          if (!authState.profile) {
-            updateAuthState({ loading: true })
-            try {
-              await loadProfile(user.id, user.email, user.user_metadata?.full_name)
-            } catch (error) {
-              console.error('Erro ao carregar perfil no TOKEN_REFRESHED:', error)
-              updateAuthState({ error: 'Erro ao carregar perfil' })
+        if (session?.user) {
+          // [APLICANDO CORREÇÃO SUPABASE BUG] - usar setTimeout para evitar deadlock
+          setTimeout(async () => {
+            if (mounted) {
+              await loadUserProfile(session.user.id, session.user.email || undefined)
             }
-            updateAuthState({ loading: false })
-          }
+          }, 0)
+        } else {
+          updateAuthState({ 
+            profile: null, 
+            usage: null,
+            loading: false 
+          })
         }
-
-        // Garantir que loading seja desabilitado e initialized seja true
-        updateAuthState({
-          loading: false,
-          initialized: true,
-        })
-      }, 0) // Executa após o callback terminar, evitando deadlocks
-    })
+      }
+    )
 
     return () => {
+      mounted = false
+      mountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [updateAuthState, loadProfile, authState.user?.id, authState.profile])
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      updateAuthState({ loading: true, error: null })
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      })
-
-      return { data, error }
-    } catch (error) {
-      console.error('Erro no signup:', error)
-      updateAuthState({ error: 'Erro ao criar conta' })
-      return { data: null, error }
-    } finally {
-      updateAuthState({ loading: false })
-    }
-  }
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      updateAuthState({ loading: true, error: null })
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        updateAuthState({ error: 'Credenciais inválidas' })
-      }
-
-      return { data, error }
-    } catch (error) {
-      console.error('Erro no signin:', error)
-      updateAuthState({ error: 'Erro ao fazer login' })
-      return { data: null, error }
-    } finally {
-      updateAuthState({ loading: false })
-    }
-  }
-
-  const signOut = async () => {
-    try {
-      updateAuthState({ loading: true, error: null })
-      const currentUserId = authState.user?.id
-
-      const { error } = await supabase.auth.signOut()
-
-      if (!error) {
-        updateAuthState({
-          user: null,
-          profile: null,
-          loading: false,
-        })
-
-        // Limpar cache do usuário ao fazer logout
-        if (currentUserId) {
-          clearUserCache(currentUserId)
-        }
-      } else {
-        updateAuthState({ error: 'Erro ao sair' })
-      }
-
-      return { error }
-    } catch (error) {
-      console.error('Erro no signout:', error)
-      updateAuthState({ error: 'Erro ao sair' })
-      return { error }
-    } finally {
-      updateAuthState({ loading: false })
-    }
-  }
-
-  const checkAuth = useCallback(async () => {
-    return initializeAuth()
-  }, [initializeAuth])
+  }, [loadUserProfile, updateAuthState])
 
   return {
     user: authState.user,
     profile: authState.profile,
+    usage: authState.usage, // NOVO: dados de uso
     loading: authState.loading,
     initialized: authState.initialized,
     error: authState.error,
-    isAuthenticated: !!authState.user && authState.initialized,
     signUp,
     signIn,
     signOut,
-    checkAuth,
+    loadUserProfile,
+    refreshUserData, // NOVO: função para refresh manual
   }
 }

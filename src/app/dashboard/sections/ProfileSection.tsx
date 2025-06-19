@@ -1,9 +1,9 @@
 import { Icons } from '@/components/Icons'
-import { User, UserProfile } from '@/modules/dashboard'
+import { User, DashboardUser } from '@/modules/dashboard'
 
 interface ProfileSectionProps {
   user: User | null
-  profile: UserProfile | null
+  profile: DashboardUser | null
 }
 
 export default function ProfileSection({ profile }: ProfileSectionProps) {

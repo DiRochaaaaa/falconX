@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { Icons } from '@/components/Icons'
 import {
   User,
-  UserProfile,
+  DashboardUser,
   generateProtectionScript,
   generateLegacyProtectionScript,
 } from '@/modules/dashboard'
 
 interface ScriptsSectionProps {
   user: User | null
-  profile: UserProfile | null
+  profile: DashboardUser | null
 }
 
 export default function ScriptsSection({ user }: ScriptsSectionProps) {
