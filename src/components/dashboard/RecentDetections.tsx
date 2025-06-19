@@ -2,6 +2,12 @@
 
 import { Icons } from '@/components/Icons'
 
+interface SlugData {
+  slug: string
+  unique_visitors: number
+  total_visits: number
+}
+
 interface Detection {
   id: string
   domain: string
@@ -12,6 +18,7 @@ interface Detection {
   slug_used?: string
   visitor_count?: number
   unique_visitors?: number
+  slugs_data?: SlugData[]
   referrer_url?: string | null
   session_duration?: number
 }
@@ -33,10 +40,6 @@ function DetectionItem({ detection }: { detection: Detection }) {
     if (diffInMinutes < 60) return `${diffInMinutes}min atrás`
     if (diffInHours < 24) return `${diffInHours}h atrás`
     return `${diffInDays}d atrás`
-  }
-
-  const getSlugInfo = (detection: Detection) => {
-    return detection.slug_used || '/'
   }
 
   const getVisitorCount = (detection: Detection) => {
@@ -124,10 +127,6 @@ function DetectionItem({ detection }: { detection: Detection }) {
                   </div>
                 </div>
               )}
-              <div className="flex items-center space-x-1">
-                <span className="text-gray-500">Página:</span>
-                <code className="font-mono text-xs text-blue-300">{getSlugInfo(detection)}</code>
-              </div>
             </div>
 
             {/* Nível de risco compacto */}
@@ -143,6 +142,32 @@ function DetectionItem({ detection }: { detection: Detection }) {
               </span>
             </div>
           </div>
+
+          {/* Slugs compactas */}
+          {detection.slugs_data && detection.slugs_data.length > 0 && (
+            <div className="mt-2">
+              <div className="flex flex-wrap gap-1">
+                {detection.slugs_data.slice(0, 3).map((slugData, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center space-x-1 rounded bg-gray-700/50 px-2 py-1 text-xs"
+                  >
+                    <code className="font-mono text-blue-300">{slugData.slug}</code>
+                    <span className="text-gray-400">•</span>
+                    <span className="font-semibold text-blue-300">{slugData.unique_visitors}</span>
+                    <span className="text-gray-500">únicos</span>
+                    <span className="text-gray-600">/</span>
+                    <span className="text-green-300">{slugData.total_visits}</span>
+                  </div>
+                ))}
+                {detection.slugs_data.length > 3 && (
+                  <div className="flex items-center rounded bg-gray-700/30 px-2 py-1 text-xs text-gray-400">
+                    +{detection.slugs_data.length - 3} mais
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Alerta para alto volume baseado em visitantes únicos */}
           {getUniqueVisitors(detection) > 10 && (

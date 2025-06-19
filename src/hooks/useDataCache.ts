@@ -261,7 +261,7 @@ export function useRecentDetections(userId: string) {
       // Buscar clones únicos (sem duplicação) ordenados por última detecção
       const { data, error } = await supabase
         .from('detected_clones')
-        .select('*')
+        .select('*, slugs_data')
         .eq('user_id', userId)
         .order('last_seen', { ascending: false })
         .limit(5)
@@ -278,6 +278,7 @@ export function useRecentDetections(userId: string) {
         slug_used: '/', // Página principal por padrão
         visitor_count: clone.detection_count || 0,
         unique_visitors: clone.unique_visitors_count || 0,
+        slugs_data: clone.slugs_data || [],
         session_duration: 0,
         referrer_url: null,
       }))
