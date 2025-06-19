@@ -32,7 +32,7 @@ export async function GET(
 
     // Para agora, aceitar qualquer script ID válido
     // TODO: Implementar validação com banco de dados
-    const script = generateBasicScript(scriptId)
+    const script = await generateBasicScript(scriptId)
 
     return new NextResponse(script, {
       status: 200,
@@ -47,22 +47,28 @@ export async function GET(
 }
 
 /**
- * Converte scriptId para userId (reverso da função generateScriptId)
- * Para agora, vamos usar o próprio scriptId como userId temporariamente
- * TODO: Implementar lookup real no banco de dados
+ * Busca userId real usando lookup na tabela generated_scripts
+ * Implementação completa com fallback para compatibilidade
  */
-function extractUserIdFromScriptId(scriptId: string): string {
-  // Por enquanto, usar o scriptId como identificador único
-  // Na implementação real, fazer lookup no banco para encontrar o userId
+async function extractUserIdFromScriptId(scriptId: string): Promise<string> {
+  const { scriptIdToUserId } = await import('@/lib/script-utils')
+  
+  const userId = await scriptIdToUserId(scriptId)
+  
+  if (userId) {
+    return userId
+  }
+  
+  // Fallback: usar hash como identificador temporário
   return scriptId.replace('fx_', '')
 }
 
 /**
  * Gera script básico para teste
  */
-function generateBasicScript(scriptId: string): string {
+async function generateBasicScript(scriptId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-  const userId = extractUserIdFromScriptId(scriptId)
+  const userId = await extractUserIdFromScriptId(scriptId)
 
   return `
 (function() {

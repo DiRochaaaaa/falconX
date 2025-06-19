@@ -201,9 +201,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Executar ação baseada no tipo
+    // Executar ação baseada no tipo (compatibilidade com tipos do banco)
     let response
     switch (action.action_type) {
+      case 'redirect_traffic':
       case 'redirect':
         response = {
           action: 'redirect',
@@ -212,6 +213,7 @@ export async function POST(request: NextRequest) {
         }
         break
 
+      case 'blank_page':
       case 'blank':
         response = {
           action: 'blank',
@@ -219,6 +221,7 @@ export async function POST(request: NextRequest) {
         }
         break
 
+      case 'custom_message':
       case 'message':
         response = {
           action: 'message',
@@ -230,7 +233,7 @@ export async function POST(request: NextRequest) {
       default:
         response = {
           action: 'none',
-          message: 'Unknown action type',
+          message: `Unknown action type: ${action.action_type}`,
         }
     }
 
