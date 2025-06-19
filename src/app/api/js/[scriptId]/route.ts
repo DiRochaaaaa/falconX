@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { validateScriptId, isValidScriptIdFormat } from '@/lib/script-utils'
 
 // Cliente Supabase com service role para bypass RLS
 const supabaseAdmin = createClient(
@@ -25,23 +25,7 @@ const scriptHeaders = {
   'X-Content-Type-Options': 'nosniff',
 }
 
-/**
- * Gera hash do userId para criar scriptId único
- */
-function generateScriptId(userId: string): string {
-  const SECRET_KEY = process.env.SCRIPT_SECRET_KEY || 'falconx-secret-2025'
-  const hash = createHash('sha256')
-    .update(userId + SECRET_KEY)
-    .digest('hex')
-  return `fx_${hash.substring(0, 12)}`
-}
-
-/**
- * Valida se o scriptId corresponde a um userId válido
- */
-function validateScriptId(scriptId: string, userId: string): boolean {
-  return generateScriptId(userId) === scriptId
-}
+// Funções movidas para @/lib/script-utils
 
 /**
  * Gera script ofuscado para o usuário
@@ -130,13 +114,16 @@ function generateObfuscatedScript(userId: string, baseUrl: string): string {
 /**
  * GET /api/js/[scriptId] - Serve script JavaScript dinâmico
  */
-export async function GET(request: NextRequest, { params }: { params: { scriptId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ scriptId: string }> }
+) {
   const startTime = Date.now()
-  const { scriptId } = params
+  const { scriptId } = await params
 
   try {
     // Validar formato do scriptId
-    if (!scriptId || !scriptId.startsWith('fx_') || scriptId.length !== 15) {
+    if (!isValidScriptIdFormat(scriptId)) {
       logger.warn('Script ID inválido', { scriptId })
       return new NextResponse('// Script not found', {
         status: 404,
@@ -214,5 +201,4 @@ export async function GET(request: NextRequest, { params }: { params: { scriptId
   }
 }
 
-// Função utilitária para uso em outros módulos
-export { generateScriptId }
+// Função utilitária removida do export para compatibilidade com Next.js routes

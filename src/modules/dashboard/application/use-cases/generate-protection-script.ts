@@ -1,15 +1,4 @@
-import { createHash } from 'crypto'
-
-/**
- * Gera script ID único baseado no userId
- */
-function generateScriptId(userId: string): string {
-  const SECRET_KEY = process.env.SCRIPT_SECRET_KEY || 'falconx-secret-2025'
-  const hash = createHash('sha256')
-    .update(userId + SECRET_KEY)
-    .digest('hex')
-  return `fx_${hash.substring(0, 12)}`
-}
+import { generateScriptId } from '@/lib/script-utils'
 
 /**
  * Gera script de proteção personalizado para o usuário
@@ -113,5 +102,4 @@ export function generateLegacyProtectionScript(userId: string, baseUrl: string):
   `.trim()
 }
 
-// Exportar função utilitária para uso em outras partes do sistema
-export { generateScriptId }
+// Função generateScriptId importada de @/lib/script-utils
