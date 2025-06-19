@@ -1,7 +1,6 @@
 'use client'
 
 import { Icons } from '@/components/Icons'
-import { useState } from 'react'
 
 interface SlugData {
   slug: string
@@ -30,8 +29,6 @@ interface RecentDetectionsProps {
 }
 
 function DetectionItem({ detection }: { detection: Detection }) {
-  const [showAllSlugs, setShowAllSlugs] = useState(false)
-
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -93,10 +90,8 @@ function DetectionItem({ detection }: { detection: Detection }) {
     window.open(cloneUrl, '_blank', 'noopener,noreferrer')
   }
 
-  // Determinar quantas slugs mostrar
-  const slugsToShow = showAllSlugs 
-    ? detection.slugs_data || []
-    : detection.slugs_data?.slice(0, 3) || []
+  // 🎯 CORREÇÃO: Sempre mostrar TODAS as slugs
+  const slugsToShow = detection.slugs_data || []
 
   return (
     <div className="group rounded-lg border border-gray-700/50 bg-gray-800/30 p-3 transition-all duration-200 hover:border-red-500/30 hover:bg-gray-800/50">
@@ -157,21 +152,14 @@ function DetectionItem({ detection }: { detection: Detection }) {
             </div>
           </div>
 
-          {/* Slugs clicáveis */}
+          {/* 🎯 TODAS as slugs clicáveis - SEMPRE VISÍVEIS */}
           {detection.slugs_data && detection.slugs_data.length > 0 && (
             <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400">
-                  Páginas detectadas ({detection.slugs_data.length})
+                  📄 Todas as páginas detectadas ({detection.slugs_data.length})
                 </span>
-                {detection.slugs_data.length > 3 && (
-                  <button
-                    onClick={() => setShowAllSlugs(!showAllSlugs)}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors duration-200"
-                  >
-                    {showAllSlugs ? 'Mostrar menos' : 'Ver todas'}
-                  </button>
-                )}
+                {/* 🎯 REMOVIDO: Botão "Ver todas" - agora sempre mostra todas */}
               </div>
               
               <div className="flex flex-wrap gap-1.5">
@@ -204,12 +192,7 @@ function DetectionItem({ detection }: { detection: Detection }) {
                 ))}
               </div>
               
-              {/* Indicador de slugs ocultas quando não expandido */}
-              {!showAllSlugs && detection.slugs_data.length > 3 && (
-                <div className="mt-1.5 text-xs text-gray-500">
-                  +{detection.slugs_data.length - 3} páginas adicionais
-                </div>
-              )}
+              {/* 🎯 REMOVIDO: Indicador "+X páginas adicionais" - agora sempre mostra todas */}
             </div>
           )}
 
