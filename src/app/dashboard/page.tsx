@@ -9,6 +9,7 @@ import PlanLimitStatus from '@/components/dashboard/PlanLimitStatus'
 import BlockedClonesAlert from '@/components/dashboard/BlockedClonesAlert'
 import { getPlanInfo } from '@/lib/plan-utils'
 import { PlanUsage } from '@/hooks/usePlanLimits'
+import { authenticatedGet } from '@/lib/auth-fetch'
 
 // Modular imports
 import {
@@ -54,7 +55,7 @@ function DashboardSection({ user, profile, usage }: { user: User | null; profile
       if (!user?.id) return
 
       try {
-        const response = await fetch(`/api/plan-limits?userId=${user.id}`)
+        const response = await authenticatedGet(`/api/plan-limits?userId=${user.id}`)
         if (response.ok) {
           const data = await response.json()
           setBlockedClonesCount(data.usage?.blockedClones || 0)

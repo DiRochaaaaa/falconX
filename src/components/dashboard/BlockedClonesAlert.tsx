@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Icons } from '@/components/Icons'
 import { DashboardUser } from '@/modules/dashboard/domain/types'
+import { authenticatedGet } from '@/lib/auth-fetch'
 
 interface BlockedClonesAlertProps {
   user: DashboardUser | null
@@ -20,8 +21,8 @@ export default function BlockedClonesAlert({ user, loading }: BlockedClonesAlert
 
     async function fetchRealData() {
       try {
-        // Buscar dados reais da API
-        const response = await fetch(`/api/plan-limits?userId=${user!.id}`)
+        // Buscar dados reais da API (com autenticação)
+        const response = await authenticatedGet(`/api/plan-limits?userId=${user!.id}`)
         const data = await response.json()
 
         if (data.success) {
