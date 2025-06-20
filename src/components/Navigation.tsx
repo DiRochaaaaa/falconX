@@ -14,18 +14,23 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
   const { profile, signOut } = useAuth()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = async () => {
     await signOut()
     router.push('/login')
   }
 
-  // Fechar menu quando clicar fora
+  // Fechar menu quando clicar fora - Desktop
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false)
       }
     }
 
@@ -53,6 +58,7 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
   const handleSectionChange = (section: string) => {
     onSectionChange(section)
     setIsMenuOpen(false)
+    setIsMobileMenuOpen(false)
   }
 
   return (
@@ -146,7 +152,7 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
         </div>
       </nav>
 
-      {/* Mobile Header */}
+      {/* Mobile Header - MODIFICADO para incluir menu do usuário */}
       <header className="md:hidden mobile-header">
         <div className="flex items-center justify-between px-4 h-14">
           <div
@@ -155,23 +161,62 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
           >
             Falcon X
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-falcon-500 to-falcon-600 rounded-full flex items-center justify-center">
-              <Icons.User className="h-4 w-4 text-white" />
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-white">
-                {(profile?.full_name || profile?.email || 'Usuário').split(' ')[0]}
+          
+          {/* NOVO: Menu do usuário no mobile */}
+          <div className="relative" ref={mobileMenuRef}>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex items-center gap-2 p-1 rounded-xl hover:bg-white/5 transition-colors"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-falcon-500 to-falcon-600 rounded-full flex items-center justify-center">
+                <Icons.User className="h-4 w-4 text-white" />
               </div>
-              <div className="text-xs text-gray-400 capitalize">
-                {profile?.plan?.name || 'Gratuito'}
+              <div className="text-right">
+                <div className="text-sm font-medium text-white">
+                  {(profile?.full_name || profile?.email || 'Usuário').split(' ')[0]}
+                </div>
+                <div className="text-xs text-gray-400 capitalize">
+                  {profile?.plan?.name || 'Gratuito'}
+                </div>
               </div>
-            </div>
+              <Icons.ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${
+                isMobileMenuOpen ? 'rotate-180' : ''
+              }`} />
+            </button>
+
+            {/* NOVO: Dropdown Menu Mobile */}
+            {isMobileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-52 glass-strong rounded-2xl shadow-2xl overflow-hidden animate-fade-in-down z-50">
+                <div className="py-2">
+                  {secondaryItems.map((item) => {
+                    const IconComponent = item.icon
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSectionChange(item.id)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-falcon-500/10 transition-colors"
+                      >
+                        <IconComponent className="h-4 w-4 text-falcon-400" />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                  <div className="my-1 border-t border-white/10" />
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Icons.Logout className="h-4 w-4" />
+                    Sair
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - CORRIGIDO para prevenir zoom */}
       <nav className="md:hidden mobile-nav">
         <div className="grid grid-cols-4 h-16">
           {navigationItems.map((item) => {
@@ -181,6 +226,7 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
               <button
                 key={item.id}
                 onClick={() => handleSectionChange(item.id)}
+                data-section={item.id}
                 className={`flex flex-col items-center justify-center gap-1 transition-all ${
                   isActive
                     ? 'text-falcon-400'
@@ -200,49 +246,6 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
           })}
         </div>
       </nav>
-
-      {/* Mobile Secondary Menu Floating Button */}
-      <div className="md:hidden floating-menu">
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`w-14 h-14 bg-falcon-500 hover:bg-falcon-600 rounded-full shadow-lg shadow-falcon-500/25 flex items-center justify-center transition-all ${
-              isMenuOpen ? 'rotate-45' : ''
-            }`}
-          >
-            <Icons.Plus className="h-6 w-6 text-white" />
-          </button>
-
-          {/* Floating Menu */}
-          {isMenuOpen && (
-            <div className="absolute bottom-16 right-0 w-48 glass-strong rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
-              <div className="py-2">
-                {secondaryItems.map((item) => {
-                  const IconComponent = item.icon
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSectionChange(item.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-falcon-500/10 transition-colors"
-                    >
-                      <IconComponent className="h-4 w-4 text-falcon-400" />
-                      {item.label}
-                    </button>
-                  )
-                })}
-                <div className="my-1 border-t border-white/10" />
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                >
-                  <Icons.Logout className="h-4 w-4" />
-                  Sair
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </>
   )
 }

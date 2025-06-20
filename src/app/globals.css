@@ -420,10 +420,47 @@ div[style*="background: red"],
     transform: scale(1.1);
     box-shadow: 0 6px 16px rgba(34, 197, 94, 0.6);
   }
+  
+  /* NOVO: Input Apple style */
+  .input-apple {
+    @apply w-full rounded-lg border px-4 py-3 transition-all duration-300;
+    background: rgba(17, 17, 17, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+  
+  .input-apple:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  }
+  
+  .input-apple::placeholder {
+    color: rgba(156, 163, 175, 1);
+  }
 }
 
 /* Mobile Navigation Fix */
 @media (max-width: 768px) {
+  /* Prevenir zoom em elementos interativos */
+  button, input, select, textarea, a {
+    touch-action: manipulation !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* Permitir seleção de texto em inputs */
+  input, textarea {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+  }
+  
+  /* Navegação mobile fixa */
   .mobile-nav {
     position: fixed !important;
     bottom: 0 !important;
@@ -433,6 +470,24 @@ div[style*="background: red"],
     background: rgba(17, 24, 39, 0.95) !important;
     backdrop-filter: blur(16px) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    /* CORRIGIDO: Prevenir transformações que causam zoom */
+    transform: none !important;
+    will-change: auto !important;
+  }
+  
+  /* CORRIGIDO: Botões da navegação mobile sem zoom */
+  .mobile-nav button {
+    transform: none !important;
+    transition: color 0.2s ease, background-color 0.2s ease !important;
+    /* Remover transitions que podem causar zoom */
+    will-change: auto !important;
+  }
+  
+  /* CORRIGIDO: Seção de ações específica */
+  .mobile-nav button[data-section="actions"] {
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
   }
   
   .mobile-header {
@@ -442,13 +497,9 @@ div[style*="background: red"],
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(16px) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
-  
-  .floating-menu {
-    position: fixed !important;
-    bottom: 80px !important;
-    right: 16px !important;
-    z-index: 9997 !important;
+    /* CORRIGIDO: Prevenir transformações */
+    transform: none !important;
+    will-change: auto !important;
   }
   
   /* Hide any debug elements on mobile */
@@ -458,8 +509,133 @@ div[style*="background: red"],
     display: none !important;
   }
   
-  /* Garantir que body tenha padding para bottom nav */
+  /* CORRIGIDO: Garantir que body tenha padding para bottom nav */
   body {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Prevenir zoom global */
+    -webkit-text-size-adjust: 100% !important;
+    -moz-text-size-adjust: 100% !important;
+    -ms-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
   }
+  
+  /* NOVO: Prevenir zoom em elementos específicos */
+  .glass, .glass-strong, .card {
+    transform: none !important;
+    zoom: 1 !important;
+    will-change: auto !important;
+  }
+  
+  /* NOVO: Corrigir hover states em mobile */
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-ghost:hover {
+    transform: none !important;
+  }
+  
+  /* NOVO: Garantir que animations não causem zoom */
+  * {
+    zoom: 1 !important;
+  }
+  
+  /* NOVO: Corrigir problemas específicos de viewport */
+  html {
+    -webkit-text-size-adjust: none !important;
+    -moz-text-size-adjust: none !important;
+    -ms-text-size-adjust: none !important;
+    text-size-adjust: none !important;
+  }
+}
+
+/* NOVO: Regras globais anti-zoom */
+* {
+  /* Prevenir zoom inadvertido */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* NOVO: Botões e elementos interativos */
+button, a, input, select, textarea {
+  /* Prevenir double-tap zoom */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* NOVO: Permitir zoom apenas em inputs de texto */
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+input[type="search"], 
+input[type="url"], 
+textarea {
+  touch-action: manipulation;
+}
+
+/* NOVO: Animations que não causam zoom */
+@keyframes fadeInNoZoom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fadeInNoZoom 0.2s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInNoZoom 0.2s ease-out;
+}
+
+/* NOVO: CSS adicional para corrigir ActionSection mobile */
+@media (max-width: 768px) {
+  /* Container responsivo */
+  .max-w-5xl {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Prevenir overflow em cards */
+  .card {
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+  
+  /* URLs e códigos longos */
+  code, pre {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    word-break: break-all !important;
+  }
+  
+  /* Modais responsivos */
+  .fixed.inset-0 {
+    padding: 8px !important;
+  }
+  
+  /* Garantir que elementos não vazem */
+  .animate-scale-in {
+    animation: none !important;
+  }
+}
+
+/* NOVO: Animation scale-in mobile-safe */
+@keyframes scaleInMobile {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleInMobile 0.2s ease-out;
 }

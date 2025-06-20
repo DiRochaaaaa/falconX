@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   keywords: ['proteção', 'funnel', 'clone', 'detecção', 'segurança'],
   authors: [{ name: 'Falcon X Team' }],
   robots: 'index, follow',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,9 +24,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Favicon otimizado */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
 
-        {/* Meta tags para performance */}
+        {/* Meta tags para performance e mobile */}
         <meta name="theme-color" content="#10b981" />
         <meta name="color-scheme" content="dark" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
+        {/* NOVO: Meta tag adicional para prevenir zoom */}
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-gradient-main min-h-screen antialiased" suppressHydrationWarning={true}>
         {children}

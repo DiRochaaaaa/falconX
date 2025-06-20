@@ -13,7 +13,7 @@ interface ActionsSectionProps {
   }
 }
 
-// Toast Apple-style com verde
+// Toast Apple-style com verde - CORRIGIDO para mobile
 function AppleToast({
   message,
   type,
@@ -29,9 +29,9 @@ function AppleToast({
   }, [onClose])
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+    <div className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 md:w-auto z-50 animate-fade-in">
       <div
-        className={`backdrop-blur-md rounded-2xl px-6 py-4 shadow-2xl border ${
+        className={`backdrop-blur-md rounded-2xl px-4 py-3 md:px-6 md:py-4 shadow-2xl border ${
           type === 'success' 
             ? 'bg-falcon-50/90 border-falcon-200/50 text-falcon-800' 
             : 'bg-red-50/90 border-red-200/50 text-red-800'
@@ -39,20 +39,20 @@ function AppleToast({
       >
         <div className="flex items-center gap-3">
           {type === 'success' ? (
-            <div className="w-6 h-6 rounded-full bg-falcon-500 flex items-center justify-center">
-              <Icons.CheckCircle className="h-4 w-4 text-white" />
+            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-falcon-500 flex items-center justify-center">
+              <Icons.CheckCircle className="h-3 w-3 md:h-4 md:w-4 text-white" />
             </div>
           ) : (
-            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-              <Icons.AlertCircle className="h-4 w-4 text-white" />
+            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-red-500 flex items-center justify-center">
+              <Icons.AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-white" />
             </div>
           )}
-          <span className="font-medium">{message}</span>
+          <span className="font-medium text-sm md:text-base">{message}</span>
           <button
             onClick={onClose}
             className="ml-2 p-1 rounded-full hover:bg-black/10 transition-colors"
           >
-            <Icons.X className="h-4 w-4" />
+            <Icons.X className="h-3 w-3 md:h-4 md:w-4" />
           </button>
         </div>
       </div>
@@ -75,7 +75,7 @@ function AppleSwitch({
       type="button"
       onClick={onChange}
       disabled={disabled}
-      className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-falcon-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`relative inline-flex h-6 w-11 md:h-8 md:w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-falcon-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
         enabled ? 'bg-falcon-500' : 'bg-gray-300'
       }`}
       role="switch"
@@ -83,8 +83,8 @@ function AppleSwitch({
     >
       <span
         aria-hidden="true"
-        className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-          enabled ? 'translate-x-6' : 'translate-x-0'
+        className={`pointer-events-none inline-block h-5 w-5 md:h-7 md:w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+          enabled ? 'translate-x-5 md:translate-x-6' : 'translate-x-0'
         }`}
       />
     </button>
@@ -117,7 +117,7 @@ const PlatformIcon = ({
   return <IconComponent className={className} />
 }
 
-// Card de Ação Apple-style com verde
+// Card de Ação Apple-style com verde - CORRIGIDO para mobile
 function AppleActionCard({
   action,
   onToggle,
@@ -161,24 +161,24 @@ function AppleActionCard({
 
   return (
     <div className="card card-hover animate-scale-in">
-      {/* Header */}
-      <div className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4 flex-1">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+      {/* Header responsivo */}
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-start md:justify-between md:space-y-0">
+          <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center ${
               action.is_active ? 'bg-falcon-500/20' : 'bg-gray-500/20'
             }`}>
-              <ActionIcon className={`h-6 w-6 ${
+              <ActionIcon className={`h-5 w-5 md:h-6 md:w-6 ${
                 action.is_active ? 'text-falcon-400' : 'text-gray-400'
               }`} />
             </div>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-white">
+              <div className="flex flex-col space-y-2 md:flex-row md:items-center md:gap-3 md:space-y-0 mb-2">
+                <h3 className="text-base md:text-lg font-semibold text-white">
                   {getActionTypeLabel(action.action_type)}
                 </h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                <span className={`px-2 py-1 md:px-3 rounded-full text-xs font-medium self-start ${
                   action.is_active 
                     ? 'bg-falcon-100/20 text-falcon-300 border border-falcon-500/30'
                     : 'bg-gray-100/20 text-gray-400 border border-gray-500/30'
@@ -188,12 +188,19 @@ function AppleActionCard({
               </div>
               
               {action.redirect_url && (
-                <p className="text-sm text-gray-400 mb-3 line-clamp-2 break-all">
-                  {action.redirect_url}
+                <p className="text-xs md:text-sm text-gray-400 mb-3 break-all">
+                  <span className="block md:hidden">
+                    {action.redirect_url.length > 30 
+                      ? `${action.redirect_url.substring(0, 30)}...` 
+                      : action.redirect_url}
+                  </span>
+                  <span className="hidden md:block line-clamp-2">
+                    {action.redirect_url}
+                  </span>
                 </p>
               )}
               
-              <div className="flex items-center gap-6 text-xs text-gray-500">
+              <div className="flex flex-col space-y-1 md:flex-row md:items-center md:gap-6 md:space-y-0 text-xs text-gray-500">
                 <div className="flex items-center gap-2">
                   <Icons.Percent className="h-3 w-3" />
                   <span>Execução: {action.redirect_percentage}%</span>
@@ -206,31 +213,37 @@ function AppleActionCard({
             </div>
           </div>
           
-          <AppleSwitch
-            enabled={action.is_active}
-            onChange={() => onToggle(action.id, !action.is_active)}
-            disabled={disabled}
-          />
+          {/* Switch mobile no final do header */}
+          <div className="flex justify-between items-center md:block">
+            <span className="text-xs text-gray-400 md:hidden">
+              {action.is_active ? 'Ativada' : 'Desativada'}
+            </span>
+            <AppleSwitch
+              enabled={action.is_active}
+              onChange={() => onToggle(action.id, !action.is_active)}
+              disabled={disabled}
+            />
+          </div>
         </div>
       </div>
       
-      {/* Actions */}
-      <div className="border-t border-white/10 bg-white/[0.02] px-6 py-4">
-        <div className="flex gap-3">
+      {/* Actions responsivas */}
+      <div className="border-t border-white/10 bg-white/[0.02] px-4 py-3 md:px-6 md:py-4">
+        <div className="flex flex-col space-y-2 md:flex-row md:gap-3 md:space-y-0">
           <button
             onClick={() => onEdit(action)}
             disabled={disabled}
-            className="btn-secondary flex-1 h-10 text-sm"
+            className="btn-secondary flex-1 h-9 md:h-10 text-xs md:text-sm"
           >
-            <Icons.Edit className="h-4 w-4" />
-            Editar
+            <Icons.Edit className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="ml-1 md:ml-2">Editar</span>
           </button>
           <button
             onClick={() => onDelete(action.id)}
             disabled={disabled}
-            className="flex-1 flex items-center justify-center gap-2 h-10 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-2xl font-medium text-sm transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-1 md:gap-2 h-9 md:h-10 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-2xl font-medium text-xs md:text-sm transition-colors disabled:opacity-50"
           >
-            <Icons.Trash className="h-4 w-4" />
+            <Icons.Trash className="h-3 w-3 md:h-4 md:w-4" />
             Deletar
           </button>
         </div>
@@ -239,7 +252,7 @@ function AppleActionCard({
   )
 }
 
-// Modal Apple-style com verde
+// Modal Apple-style com verde - CORRIGIDO para mobile
 function AppleActionModal({
   initialData,
   onSubmit,
@@ -275,28 +288,28 @@ function AppleActionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-scale-in">
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl animate-scale-in">
+        {/* Header responsivo */}
+        <div className="px-4 pt-4 pb-3 md:px-6 md:pt-6 md:pb-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-lg md:text-xl font-semibold text-white">
               {isEditing ? 'Editar Ação' : 'Nova Ação'}
             </h2>
             <button
               onClick={onCancel}
-              className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-700 flex items-center justify-center transition-colors"
+              className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-700/50 hover:bg-gray-700 flex items-center justify-center transition-colors"
             >
-              <Icons.X className="h-4 w-4 text-gray-400" />
+              <Icons.X className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
             </button>
           </div>
-          <p className="text-sm text-gray-400">
+          <p className="text-xs md:text-sm text-gray-400">
             {isEditing ? 'Modifique os dados da ação' : 'Configure uma nova ação de proteção'}
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-6">
-          {/* Tipo de Ação */}
+        {/* Form responsivo */}
+        <form onSubmit={handleSubmit} className="px-4 pb-4 space-y-4 md:px-6 md:pb-6 md:space-y-6">
+          {/* Tipo de Ação responsivo */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-white">Tipo de Ação</label>
             <div className="space-y-2">
@@ -310,7 +323,7 @@ function AppleActionModal({
                 return (
                   <label
                     key={option.value}
-                    className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-center gap-3 p-3 md:p-4 rounded-2xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'border-falcon-500/50 bg-falcon-500/10'
                         : 'border-white/10 bg-white/5 hover:border-white/20'
@@ -330,16 +343,16 @@ function AppleActionModal({
                       }
                       className="sr-only"
                     />
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center ${
                       isSelected ? 'bg-falcon-500/20' : 'bg-gray-500/20'
                     }`}>
-                      <IconComponent className={`h-5 w-5 ${
+                      <IconComponent className={`h-4 w-4 md:h-5 md:w-5 ${
                         isSelected ? 'text-falcon-400' : 'text-gray-400'
                       }`} />
                     </div>
-                    <span className="font-medium text-white">{option.label}</span>
+                    <span className="font-medium text-white text-sm md:text-base">{option.label}</span>
                     {isSelected && (
-                      <Icons.CheckCircle className="h-5 w-5 text-falcon-400 ml-auto" />
+                      <Icons.CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-falcon-400 ml-auto" />
                     )}
                   </label>
                 )
@@ -357,7 +370,7 @@ function AppleActionModal({
                 type="url"
                 value={formData.redirect_url}
                 onChange={e => setFormData(prev => ({ ...prev, redirect_url: e.target.value }))}
-                className="input-apple"
+                className="input-apple text-sm md:text-base"
                 placeholder="https://exemplo.com"
                 required
               />
@@ -373,14 +386,14 @@ function AppleActionModal({
                 value={formData.redirect_url}
                 onChange={e => setFormData(prev => ({ ...prev, redirect_url: e.target.value }))}
                 rows={3}
-                className="input-apple resize-none"
+                className="input-apple resize-none text-sm md:text-base"
                 placeholder="Site não autorizado. Acesse o site oficial."
                 required
               />
             </div>
           )}
 
-          {/* Porcentagem */}
+          {/* Porcentagem responsiva */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-white">
@@ -411,30 +424,30 @@ function AppleActionModal({
             </div>
           </div>
 
-          {/* Botões */}
-          <div className="flex gap-3 pt-4">
+          {/* Botões responsivos */}
+          <div className="flex flex-col space-y-2 md:flex-row md:gap-3 md:space-y-0 pt-2 md:pt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="btn-ghost flex-1 h-12"
+              className="btn-ghost flex-1 h-10 md:h-12 text-sm md:text-base"
               disabled={loading}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1 h-12"
+              className="btn-primary flex-1 h-10 md:h-12 text-sm md:text-base"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Salvando...
+                  <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="ml-1 md:ml-2">Salvando...</span>
                 </>
               ) : (
                 <>
-                  <Icons.Save className="h-4 w-4" />
-                  {isEditing ? 'Salvar' : 'Criar'}
+                  <Icons.Save className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="ml-1 md:ml-2">{isEditing ? 'Salvar' : 'Criar'}</span>
                 </>
               )}
             </button>
@@ -585,20 +598,20 @@ export function ActionsSection({ user }: ActionsSectionProps) {
 
   if (triggerLoading || actionsLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Header Skeleton */}
-        <div className="space-y-4 animate-pulse">
-          <div className="h-10 w-64 bg-white/10 rounded-2xl" />
-          <div className="h-6 w-96 bg-white/5 rounded-xl" />
+        <div className="space-y-3 md:space-y-4 animate-pulse">
+          <div className="h-8 md:h-10 w-48 md:w-64 bg-white/10 rounded-2xl mx-auto" />
+          <div className="h-5 md:h-6 w-72 md:w-96 bg-white/5 rounded-xl mx-auto" />
         </div>
 
         {/* Tabs Skeleton */}
-        <div className="h-16 bg-white/10 rounded-2xl animate-pulse" />
+        <div className="h-14 md:h-16 bg-white/10 rounded-2xl animate-pulse" />
 
         {/* Cards Skeleton */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-40 bg-white/10 rounded-2xl animate-pulse" />
+            <div key={i} className="h-32 md:h-40 bg-white/10 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -607,31 +620,32 @@ export function ActionsSection({ user }: ActionsSectionProps) {
 
   return (
     <>
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-white">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
+        {/* Header responsivo */}
+        <div className="text-center space-y-3 md:space-y-4">
+          <h1 className="text-2xl md:text-4xl font-bold text-white">
             Gerenciar <span className="text-gradient">Ações</span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Configure ações automáticas para proteger seus domínios contra clones
           </p>
         </div>
 
-        {/* Tabs Apple-style com verde */}
-        <div className="glass rounded-3xl p-2 border border-white/10">
-          <div className="flex gap-2">
+        {/* Tabs Apple-style com verde - RESPONSIVO */}
+        <div className="glass rounded-2xl md:rounded-3xl p-1.5 md:p-2 border border-white/10">
+          <div className="flex gap-1.5 md:gap-2">
             <button
               onClick={() => setActiveTab('actions')}
-              className={`flex-1 flex items-center justify-center gap-3 h-12 rounded-2xl font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 md:gap-3 h-10 md:h-12 rounded-xl md:rounded-2xl font-medium transition-all text-sm md:text-base ${
                 activeTab === 'actions'
                   ? 'bg-falcon-500 text-white shadow-lg shadow-falcon-500/25'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Icons.Zap className="h-5 w-5" />
-              <span>Ações</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              <Icons.Zap className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="hidden sm:inline">Ações</span>
+              <span className="sm:hidden">Ações</span>
+              <span className={`px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-xs font-semibold ${
                 activeTab === 'actions' ? 'bg-white/20' : 'bg-gray-500/20'
               }`}>
                 {actions.length}
@@ -639,15 +653,16 @@ export function ActionsSection({ user }: ActionsSectionProps) {
             </button>
             <button
               onClick={() => setActiveTab('triggers')}
-              className={`flex-1 flex items-center justify-center gap-3 h-12 rounded-2xl font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 md:gap-3 h-10 md:h-12 rounded-xl md:rounded-2xl font-medium transition-all text-sm md:text-base ${
                 activeTab === 'triggers'
                   ? 'bg-falcon-500 text-white shadow-lg shadow-falcon-500/25'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Icons.Settings className="h-5 w-5" />
-              <span>Triggers</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              <Icons.Settings className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="hidden sm:inline">Triggers</span>
+              <span className="sm:hidden">Triggers</span>
+              <span className={`px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-xs font-semibold ${
                 activeTab === 'triggers' ? 'bg-white/20' : 'bg-gray-500/20'
               }`}>
                 {enabledCount}
@@ -656,47 +671,47 @@ export function ActionsSection({ user }: ActionsSectionProps) {
           </div>
         </div>
 
-        {/* Conteúdo da Aba Ações */}
+        {/* Conteúdo da Aba Ações - RESPONSIVO */}
         {activeTab === 'actions' && (
-          <div className="space-y-6">
-            {/* Header da seção */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-4 md:space-y-6">
+            {/* Header da seção responsivo */}
+            <div className="flex flex-col space-y-3 md:flex-row md:items-center md:justify-between md:space-y-0">
               <div>
-                <h2 className="text-2xl font-semibold text-white">Ações Configuradas</h2>
-                <p className="text-gray-400">
+                <h2 className="text-xl md:text-2xl font-semibold text-white">Ações Configuradas</h2>
+                <p className="text-sm md:text-base text-gray-400">
                   {actions.length} ação{actions.length !== 1 ? 'ões' : ''} configurada{actions.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="btn-primary"
+                className="btn-primary w-full md:w-auto"
                 disabled={actionsSaving}
               >
-                <Icons.Plus className="h-5 w-5" />
-                Nova Ação
+                <Icons.Plus className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="ml-2">Nova Ação</span>
               </button>
             </div>
 
-            {/* Lista de Ações */}
+            {/* Lista de Ações responsiva */}
             {actions.length === 0 ? (
-              <div className="card p-12 text-center">
-                <div className="w-16 h-16 bg-falcon-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Icons.Zap className="h-8 w-8 text-falcon-400" />
+              <div className="card p-6 md:p-12 text-center">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-falcon-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                  <Icons.Zap className="h-6 w-6 md:h-8 md:w-8 text-falcon-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">Nenhuma ação configurada</h3>
-                <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                <h3 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-3">Nenhuma ação configurada</h3>
+                <p className="text-sm md:text-base text-gray-400 mb-4 md:mb-6 max-w-md mx-auto">
                   Crie sua primeira ação para proteger seus domínios automaticamente quando clones forem detectados
                 </p>
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="btn-primary"
+                  className="btn-primary w-full md:w-auto"
                 >
-                  <Icons.Plus className="h-5 w-5" />
-                  Criar Primeira Ação
+                  <Icons.Plus className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="ml-2">Criar Primeira Ação</span>
                 </button>
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
                 {actions.map(action => (
                   <AppleActionCard
                     key={action.id}
@@ -750,36 +765,36 @@ export function ActionsSection({ user }: ActionsSectionProps) {
           </div>
         )}
 
-        {/* Conteúdo da Aba Triggers */}
+        {/* Conteúdo da Aba Triggers - RESPONSIVO */}
         {activeTab === 'triggers' && (
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="card p-6 text-center">
-                <div className="text-3xl font-bold text-falcon-400 mb-1">{enabledCount}</div>
-                <div className="text-sm text-gray-400">Ativos</div>
+          <div className="space-y-4 md:space-y-6">
+            {/* Stats responsivos */}
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <div className="card p-3 md:p-6 text-center">
+                <div className="text-xl md:text-3xl font-bold text-falcon-400 mb-1">{enabledCount}</div>
+                <div className="text-xs md:text-sm text-gray-400">Ativos</div>
               </div>
-              <div className="card p-6 text-center">
-                <div className="text-3xl font-bold text-falcon-400 mb-1">{triggerParams.length}</div>
-                <div className="text-sm text-gray-400">Total</div>
+              <div className="card p-3 md:p-6 text-center">
+                <div className="text-xl md:text-3xl font-bold text-falcon-400 mb-1">{triggerParams.length}</div>
+                <div className="text-xs md:text-sm text-gray-400">Total</div>
               </div>
-              <div className="card p-6 text-center">
-                <div className="text-3xl font-bold text-falcon-400 mb-1">
+              <div className="card p-3 md:p-6 text-center">
+                <div className="text-xl md:text-3xl font-bold text-falcon-400 mb-1">
                   {[...new Set(triggerParams.map(t => t.platform))].length}
                 </div>
-                <div className="text-sm text-gray-400">Plataformas</div>
+                <div className="text-xs md:text-sm text-gray-400">Plataformas</div>
               </div>
             </div>
 
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Header responsivo */}
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
               <div>
-                <h2 className="text-2xl font-semibold text-white">Configuração de Triggers</h2>
-                <p className="text-gray-400">
+                <h2 className="text-xl md:text-2xl font-semibold text-white">Configuração de Triggers</h2>
+                <p className="text-sm md:text-base text-gray-400">
                   Configure quais parâmetros de URL devem ativar as ações de proteção
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:gap-2">
                 <button
                   onClick={() => {
                     const allEnabled = triggerParams.every(t => t.enabled)
@@ -787,50 +802,50 @@ export function ActionsSection({ user }: ActionsSectionProps) {
                       prev.map(trigger => ({ ...trigger, enabled: !allEnabled }))
                     )
                   }}
-                  className="btn-ghost"
+                  className="btn-ghost text-sm"
                   disabled={triggerSaving}
                 >
                   {triggerParams.every(t => t.enabled) ? (
                     <>
-                      <Icons.Square className="h-4 w-4" />
-                      Desmarcar Todos
+                      <Icons.Square className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="ml-1 md:ml-2">Desmarcar Todos</span>
                     </>
                   ) : (
                     <>
-                      <Icons.CheckSquare className="h-4 w-4" />
-                      Selecionar Todos
+                      <Icons.CheckSquare className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="ml-1 md:ml-2">Selecionar Todos</span>
                     </>
                   )}
                 </button>
                 <button
                   onClick={handleResetTriggers}
-                  className="btn-ghost"
+                  className="btn-ghost text-sm"
                   disabled={triggerSaving}
                 >
-                  <Icons.RotateCcw className="h-4 w-4" />
-                  Restaurar
+                  <Icons.RotateCcw className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="ml-1 md:ml-2">Restaurar</span>
                 </button>
                 <button
                   onClick={handleSaveTriggers}
-                  className="btn-primary"
+                  className="btn-primary text-sm"
                   disabled={triggerSaving}
                 >
                   {triggerSaving ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Salvando...
+                      <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="ml-1 md:ml-2">Salvando...</span>
                     </>
                   ) : (
                     <>
-                      <Icons.Save className="h-4 w-4" />
-                      Salvar
+                      <Icons.Save className="h-3 w-3 md:h-4 md:w-4" />
+                      <span className="ml-1 md:ml-2">Salvar</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Lista de Triggers */}
+            {/* Lista de Triggers responsiva */}
             <div className="space-y-3">
               {triggerParams.map(trigger => (
                 <div
@@ -841,49 +856,54 @@ export function ActionsSection({ user }: ActionsSectionProps) {
                       : 'hover:border-white/20'
                   }`}
                 >
-                  <div className="flex items-center gap-4 p-6">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                  <div className="flex flex-col space-y-4 p-4 md:flex-row md:items-center md:gap-4 md:space-y-0 md:p-6">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center ${
                       trigger.enabled ? 'bg-falcon-500/20' : 'bg-gray-500/20'
                     }`}>
                       <PlatformIcon
                         platform={trigger.platform}
-                        className={`h-6 w-6 ${trigger.enabled ? 'text-falcon-400' : 'text-gray-400'}`}
+                        className={`h-5 w-5 md:h-6 md:w-6 ${trigger.enabled ? 'text-falcon-400' : 'text-gray-400'}`}
                       />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-white text-lg mb-1">{trigger.label}</h4>
-                      <p className="text-sm text-gray-400 mb-2 line-clamp-2">
+                      <h4 className="font-semibold text-white text-base md:text-lg mb-1">{trigger.label}</h4>
+                      <p className="text-xs md:text-sm text-gray-400 mb-2">
                         {trigger.description}
                       </p>
-                      <div className="flex items-center gap-3">
-                        <code className="bg-black/30 px-2 py-1 rounded-lg font-mono text-xs text-falcon-400">
+                      <div className="flex flex-col space-y-2 md:flex-row md:items-center md:gap-3 md:space-y-0">
+                        <code className="bg-black/30 px-2 py-1 rounded-lg font-mono text-xs text-falcon-400 break-all">
                           {trigger.name}
                         </code>
                         {trigger.enabled && (
-                          <span className="bg-falcon-500/20 text-falcon-300 px-2 py-1 rounded-full text-xs font-medium border border-falcon-500/30">
+                          <span className="bg-falcon-500/20 text-falcon-300 px-2 py-1 rounded-full text-xs font-medium border border-falcon-500/30 self-start">
                             Ativo
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <AppleSwitch
-                      enabled={trigger.enabled}
-                      onChange={() => handleToggleTrigger(trigger.name)}
-                      disabled={triggerSaving}
-                    />
+                    <div className="flex justify-between items-center md:block">
+                      <span className="text-xs text-gray-400 md:hidden">
+                        {trigger.enabled ? 'Ativado' : 'Desativado'}
+                      </span>
+                      <AppleSwitch
+                        enabled={trigger.enabled}
+                        onChange={() => handleToggleTrigger(trigger.name)}
+                        disabled={triggerSaving}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
 
               {triggerParams.length === 0 && (
-                <div className="card p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <Icons.Search className="h-8 w-8 text-gray-400" />
+                <div className="card p-6 md:p-12 text-center">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <Icons.Search className="h-6 w-6 md:h-8 md:w-8 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Nenhum trigger encontrado</h3>
-                  <p className="text-gray-400">
+                  <h3 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-3">Nenhum trigger encontrado</h3>
+                  <p className="text-sm md:text-base text-gray-400">
                     Verifique sua configuração ou recarregue a página
                   </p>
                 </div>
