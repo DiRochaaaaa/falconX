@@ -1,4 +1,4 @@
-nimport { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Função helper para fazer requests autenticados às APIs internas
