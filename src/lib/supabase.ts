@@ -112,7 +112,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
         plan_id,
         status,
         current_clone_count,
-        clone_limit,
         extra_clones_used,
         reset_date,
         created_at,
@@ -144,7 +143,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
         .insert({
           user_id: userId,
           plan_id: 1, // Free plan
-          clone_limit: 1,
           status: 'active'
         })
         .select(`
@@ -152,7 +150,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
           plan_id,
           status,
           current_clone_count,
-          clone_limit,
           extra_clones_used,
           reset_date,
           created_at,
@@ -223,7 +220,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
           plan_id: subscription.plan_id,
           status: subscription.status,
           current_clone_count: subscription.current_clone_count || 0,
-          clone_limit: subscription.clone_limit,
           extra_clones_used: subscription.extra_clones_used || 0,
           reset_date: subscription.reset_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           created_at: subscription.created_at,
@@ -266,7 +262,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
           plan_id: 1,
           status: subscription.status,
           current_clone_count: subscription.current_clone_count || 0,
-          clone_limit: subscription.clone_limit,
           extra_clones_used: subscription.extra_clones_used || 0,
           reset_date: subscription.reset_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           created_at: subscription.created_at,
@@ -294,7 +289,6 @@ export async function getUserPlanInfo(userId: string): Promise<ProfileWithPlan |
         plan_id: subscription.plan_id,
         status: subscription.status,
         current_clone_count: subscription.current_clone_count || 0,
-        clone_limit: subscription.clone_limit,
         extra_clones_used: subscription.extra_clones_used || 0,
         reset_date: subscription.reset_date,
         created_at: subscription.created_at,

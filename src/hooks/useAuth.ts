@@ -65,7 +65,7 @@ export function useAuth() {
         if (profileWithPlan) {
           // Calcular usage baseado nos dados do plano
           const currentClones = profileWithPlan.subscription.current_clone_count + profileWithPlan.subscription.extra_clones_used
-          const cloneLimit = profileWithPlan.subscription.clone_limit
+                      const cloneLimit = profileWithPlan.plan.clone_limit
           const usageProgress = cloneLimit > 0 ? Math.min((currentClones / cloneLimit) * 100, 100) : 0
           
           // Converter usage para formato do hook
