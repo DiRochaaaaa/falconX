@@ -19,13 +19,17 @@
     "validate": "npm run type-check && npm run lint && npm run format:check"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.18.1",
     "lucide-react": "^0.516.0",
     "next": "^15.3.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

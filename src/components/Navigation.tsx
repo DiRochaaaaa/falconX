@@ -14,7 +14,6 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
   const { profile, signOut } = useAuth()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = async () => {
@@ -36,276 +35,214 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
     }
   }, [])
 
-  // Função para verificar se o link está ativo
-  const isActiveLink = (section: string) => {
-    return activeSection === section
-  }
+  // Main navigation items
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
+    { id: 'domains', label: 'Domínios', icon: Icons.Globe },
+    { id: 'scripts', label: 'Scripts', icon: Icons.Code },
+    { id: 'actions', label: 'Ações', icon: Icons.Lightning },
+  ]
 
-  // Classe para links ativos
-  const getLinkClass = (section: string) => {
-    const baseClass =
-      'px-3 py-2 rounded-md text-sm font-medium transition-colors border-b-2 flex items-center cursor-pointer'
-    if (isActiveLink(section)) {
-      return `${baseClass} text-white border-green-500 bg-green-500/10`
-    }
-    return `${baseClass} text-gray-300 hover:text-green-400 border-transparent hover:border-green-500/50`
-  }
-
-  // Classe para links mobile ativos
-  const getMobileLinkClass = (section: string) => {
-    const baseClass =
-      'block px-3 py-2 rounded-md text-base font-medium transition-colors flex items-center cursor-pointer'
-    if (isActiveLink(section)) {
-      return `${baseClass} text-white bg-green-500/20`
-    }
-    return `${baseClass} text-gray-300 hover:text-green-400 hover:bg-white/5`
-  }
+  // Secondary navigation items
+  const secondaryItems = [
+    { id: 'profile', label: 'Perfil', icon: Icons.User },
+    { id: 'settings', label: 'Configurações', icon: Icons.Settings },
+    { id: 'billing', label: 'Faturamento', icon: Icons.CreditCard },
+  ]
 
   const handleSectionChange = (section: string) => {
     onSectionChange(section)
-    setIsMobileMenuOpen(false)
+    setIsMenuOpen(false)
   }
 
   return (
-    <nav className="glass-strong relative sticky top-0 z-50 border-b border-green-500/20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <h1
-                className="text-gradient cursor-pointer text-2xl font-bold transition-opacity hover:opacity-80"
-                onClick={() => handleSectionChange('dashboard')}
-              >
-                Falcon X
-              </h1>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
-                <div
-                  className={getLinkClass('dashboard')}
-                  onClick={() => handleSectionChange('dashboard')}
-                >
-                  <Icons.Dashboard className="mr-2 h-4 w-4" />
-                  Dashboard
-                </div>
-                <div
-                  className={getLinkClass('domains')}
-                  onClick={() => handleSectionChange('domains')}
-                >
-                  <Icons.Globe className="mr-2 h-4 w-4" />
-                  Domínios
-                </div>
-                <div
-                  className={getLinkClass('scripts')}
-                  onClick={() => handleSectionChange('scripts')}
-                >
-                  <Icons.Code className="mr-2 h-4 w-4" />
-                  Scripts
-                </div>
-                <div
-                  className={getLinkClass('actions')}
-                  onClick={() => handleSectionChange('actions')}
-                >
-                  <Icons.Lightning className="mr-2 h-4 w-4" />
-                  Ações
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* User Menu */}
-          <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center rounded-lg p-2 text-sm text-white transition-colors hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                >
-                  <div className="bg-gradient-green mr-3 rounded-full p-2">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-white">
-                      {profile?.full_name || profile?.email || 'Usuário'}
-                    </div>
-                    <div className="text-xs text-gray-400 capitalize">
-                      Plano {profile?.plan?.name || 'Gratuito'}
-                    </div>
-                  </div>
-                  <svg
-                    className="ml-2 h-4 w-4 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isMenuOpen && (
-                  <div className="glass-strong z-dropdown absolute right-0 mt-2 w-48 origin-top-right rounded-lg border border-green-500/20 shadow-lg">
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false)
-                          handleSectionChange('profile')
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
-                      >
-                        <div className="flex items-center">
-                          <Icons.User className="mr-3 h-4 w-4 text-green-400" />
-                          Perfil
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false)
-                          handleSectionChange('settings')
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
-                      >
-                        <div className="flex items-center">
-                          <Icons.Settings className="mr-3 h-4 w-4 text-green-400" />
-                          Configurações
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false)
-                          handleSectionChange('billing')
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
-                      >
-                        <div className="flex items-center">
-                          <Icons.CreditCard className="mr-3 h-4 w-4 text-green-400" />
-                          Faturamento
-                        </div>
-                      </button>
-                      <div className="my-1 border-t border-gray-700"></div>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false)
-                          handleSignOut()
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
-                      >
-                        <div className="flex items-center">
-                          <Icons.Logout className="mr-3 h-4 w-4" />
-                          Sair
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-300 hover:text-green-400 focus:text-green-400 focus:outline-none"
+    <>
+      {/* Desktop Navigation */}
+      <nav className="hidden md:block glass-strong sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div
+              className="text-2xl font-bold text-gradient cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleSectionChange('dashboard')}
             >
-              {isMobileMenuOpen ? (
-                <Icons.X className="h-6 w-6" />
-              ) : (
-                <Icons.Menu className="h-6 w-6" />
+              Falcon X
+            </div>
+
+            {/* Main Navigation */}
+            <div className="flex items-center space-x-1">
+              {navigationItems.map((item) => {
+                const IconComponent = item.icon
+                const isActive = activeSection === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSectionChange(item.id)}
+                    className={`btn-apple flex items-center gap-2 font-medium transition-all ${
+                      isActive
+                        ? 'bg-falcon-500 text-white shadow-lg shadow-falcon-500/25'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* User Menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-colors"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-falcon-500 to-falcon-600 rounded-full flex items-center justify-center">
+                  <Icons.User className="h-4 w-4 text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-white">
+                    {profile?.full_name || profile?.email || 'Usuário'}
+                  </div>
+                  <div className="text-xs text-gray-400 capitalize">
+                    Plano {profile?.plan?.name || 'Gratuito'}
+                  </div>
+                </div>
+                <Icons.ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${
+                  isMenuOpen ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 glass-strong rounded-2xl shadow-2xl overflow-hidden animate-fade-in-down">
+                  <div className="py-2">
+                    {secondaryItems.map((item) => {
+                      const IconComponent = item.icon
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleSectionChange(item.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-falcon-500/10 transition-colors"
+                        >
+                          <IconComponent className="h-4 w-4 text-falcon-400" />
+                          {item.label}
+                        </button>
+                      )
+                    })}
+                    <div className="my-1 border-t border-white/10" />
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Icons.Logout className="h-4 w-4" />
+                      Sair
+                    </button>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="border-t border-green-500/20 md:hidden">
-            <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-              <div
-                className={getMobileLinkClass('dashboard')}
-                onClick={() => handleSectionChange('dashboard')}
-              >
-                <Icons.Dashboard className="mr-3 h-5 w-5" />
-                Dashboard
+      {/* Mobile Header */}
+      <header className="md:hidden mobile-header">
+        <div className="flex items-center justify-between px-4 h-14">
+          <div
+            className="text-xl font-bold text-gradient cursor-pointer"
+            onClick={() => handleSectionChange('dashboard')}
+          >
+            Falcon X
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-falcon-500 to-falcon-600 rounded-full flex items-center justify-center">
+              <Icons.User className="h-4 w-4 text-white" />
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-medium text-white">
+                {(profile?.full_name || profile?.email || 'Usuário').split(' ')[0]}
               </div>
-              <div
-                className={getMobileLinkClass('domains')}
-                onClick={() => handleSectionChange('domains')}
-              >
-                <Icons.Globe className="mr-3 h-5 w-5" />
-                Domínios
+              <div className="text-xs text-gray-400 capitalize">
+                {profile?.plan?.name || 'Gratuito'}
               </div>
-              <div
-                className={getMobileLinkClass('scripts')}
-                onClick={() => handleSectionChange('scripts')}
-              >
-                <Icons.Code className="mr-3 h-5 w-5" />
-                Scripts
-              </div>
-              <div
-                className={getMobileLinkClass('actions')}
-                onClick={() => handleSectionChange('actions')}
-              >
-                <Icons.Lightning className="mr-3 h-5 w-5" />
-                Ações
-              </div>
-
-              <div className="my-2 border-t border-gray-700"></div>
-
-              <div
-                className={getMobileLinkClass('profile')}
-                onClick={() => handleSectionChange('profile')}
-              >
-                <Icons.User className="mr-3 h-5 w-5" />
-                Perfil
-              </div>
-              <div
-                className={getMobileLinkClass('settings')}
-                onClick={() => handleSectionChange('settings')}
-              >
-                <Icons.Settings className="mr-3 h-5 w-5" />
-                Configurações
-              </div>
-              <div
-                className={getMobileLinkClass('billing')}
-                onClick={() => handleSectionChange('billing')}
-              >
-                <Icons.CreditCard className="mr-3 h-5 w-5" />
-                Faturamento
-              </div>
-
-              <div className="my-2 border-t border-gray-700"></div>
-
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false)
-                  handleSignOut()
-                }}
-                className="block w-full rounded-md px-3 py-2 text-left text-base font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
-              >
-                <div className="flex items-center">
-                  <Icons.Logout className="mr-3 h-5 w-5" />
-                  Sair
-                </div>
-              </button>
             </div>
           </div>
-        )}
+        </div>
+      </header>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden mobile-nav">
+        <div className="grid grid-cols-4 h-16">
+          {navigationItems.map((item) => {
+            const IconComponent = item.icon
+            const isActive = activeSection === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSectionChange(item.id)}
+                className={`flex flex-col items-center justify-center gap-1 transition-all ${
+                  isActive
+                    ? 'text-falcon-400'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <div className={`p-1.5 rounded-lg transition-all ${
+                  isActive ? 'bg-falcon-500/20' : ''
+                }`}>
+                  <IconComponent className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-medium">
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+
+      {/* Mobile Secondary Menu Floating Button */}
+      <div className="md:hidden floating-menu">
+        <div className="relative">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`w-14 h-14 bg-falcon-500 hover:bg-falcon-600 rounded-full shadow-lg shadow-falcon-500/25 flex items-center justify-center transition-all ${
+              isMenuOpen ? 'rotate-45' : ''
+            }`}
+          >
+            <Icons.Plus className="h-6 w-6 text-white" />
+          </button>
+
+          {/* Floating Menu */}
+          {isMenuOpen && (
+            <div className="absolute bottom-16 right-0 w-48 glass-strong rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
+              <div className="py-2">
+                {secondaryItems.map((item) => {
+                  const IconComponent = item.icon
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSectionChange(item.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-falcon-500/10 transition-colors"
+                    >
+                      <IconComponent className="h-4 w-4 text-falcon-400" />
+                      {item.label}
+                    </button>
+                  )
+                })}
+                <div className="my-1 border-t border-white/10" />
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                >
+                  <Icons.Logout className="h-4 w-4" />
+                  Sair
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </nav>
+    </>
   )
 }

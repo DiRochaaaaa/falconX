@@ -184,12 +184,6 @@ function DetectionItem({ detection }: { detection: Detection }) {
           {/* 🎯 TODAS as slugs clicáveis - SEMPRE VISÍVEIS */}
           {detection.slugs_data && detection.slugs_data.length > 0 && (
             <div className="mt-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-400">
-                  📄 Todas as páginas detectadas ({detection.slugs_data.length})
-                </span>
-                {/* 🎯 REMOVIDO: Botão "Ver todas" - agora sempre mostra todas */}
-              </div>
               
               <div className="flex flex-wrap gap-1.5">
                 {slugsToShow.map((slugData, index) => (

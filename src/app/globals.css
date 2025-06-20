@@ -11,21 +11,21 @@
   --bg-tertiary: #1a1a1a;
 
   /* Gradientes verdes */
-  --gradient-primary: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  --gradient-secondary: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
-  --gradient-accent: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%);
+  --gradient-primary: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+  --gradient-secondary: linear-gradient(135deg, #86efac 0%, #22c55e 50%, #16a34a 100%);
+  --gradient-accent: linear-gradient(135deg, #dcfce7 0%, #86efac 50%, #22c55e 100%);
 
   /* Cores de texto */
   --text-primary: #ffffff;
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
-  --text-accent: #10b981;
+  --text-accent: #22c55e;
 
   /* Bordas e sombras */
-  --border-primary: rgba(16, 185, 129, 0.2);
+  --border-primary: rgba(34, 197, 94, 0.2);
   --border-secondary: rgba(255, 255, 255, 0.1);
   --shadow-primary: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+  --shadow-glow: 0 0 20px rgba(34, 197, 94, 0.3);
 }
 
 /* Reset e base */
@@ -41,12 +41,25 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family:
-    'Inter',
+    'SF Pro Display',
     -apple-system,
     BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Helvetica Neue',
+    'Arial',
     sans-serif;
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+/* Hide any potential debug elements */
+[class*="debug"],
+[id*="debug"],
+div[style*="background-color: red"],
+div[style*="background: red"],
+.bg-red-500[class*="fixed"] {
+  display: none !important;
 }
 
 /* Prevenir problemas de hidratação */
@@ -127,13 +140,13 @@ body {
 
 .btn-secondary {
   @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium transition-all duration-300;
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(34, 197, 94, 0.1);
   color: var(--text-accent);
   border: 1px solid var(--border-primary);
 }
 
 .btn-secondary:hover {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(34, 197, 94, 0.2);
   border-color: var(--text-accent);
   transform: translateY(-1px);
 }
@@ -163,7 +176,7 @@ body {
 .input-primary:focus {
   outline: none;
   border-color: var(--text-accent);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
 .input-primary::placeholder {
@@ -233,10 +246,10 @@ body {
 @keyframes glow {
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
   }
   50% {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
   }
 }
 
@@ -265,13 +278,13 @@ body {
 .glass {
   background: rgba(17, 17, 17, 0.7);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .glass-strong {
   background: rgba(17, 17, 17, 0.9);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 /* Z-index layers */
@@ -376,11 +389,11 @@ body {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     cursor: pointer;
     border: 2px solid #ffffff;
     box-shadow:
-      0 4px 12px rgba(16, 185, 129, 0.4),
+      0 4px 12px rgba(34, 197, 94, 0.4),
       0 0 0 1px rgba(255, 255, 255, 0.1);
     transition: all 0.2s ease;
   }
@@ -388,7 +401,7 @@ body {
   .slider::-webkit-slider-thumb:hover {
     transform: scale(1.1);
     box-shadow:
-      0 6px 16px rgba(16, 185, 129, 0.6),
+      0 6px 16px rgba(34, 197, 94, 0.6),
       0 0 0 2px rgba(255, 255, 255, 0.2);
   }
 
@@ -396,26 +409,57 @@ body {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     cursor: pointer;
     border: 2px solid #ffffff;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
     transition: all 0.2s ease;
   }
 
   .slider::-moz-range-thumb:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.6);
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.6);
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+/* Mobile Navigation Fix */
+@media (max-width: 768px) {
+  .mobile-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(17, 24, 39, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .mobile-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 9998 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .floating-menu {
+    position: fixed !important;
+    bottom: 80px !important;
+    right: 16px !important;
+    z-index: 9997 !important;
+  }
+  
+  /* Hide any debug elements on mobile */
+  div[style*="position: fixed"][style*="top:"][style*="background"],
+  .fixed.top-0[class*="bg-red"],
+  [class*="debug"] {
+    display: none !important;
+  }
+  
+  /* Garantir que body tenha padding para bottom nav */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
