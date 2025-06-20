@@ -6,6 +6,7 @@ import { supabase, getUserPlanInfo } from '@/lib/supabase'
 import { clearUserCache } from './useDataCache'
 import { ProfileWithPlan } from '@/lib/types/database'
 import { PlanUsage } from './usePlanLimits'
+import { getPlanInfo } from '@/lib/plan-utils'
 
 /**
  * Hook de autenticação com dados completos de plano e limites
@@ -68,6 +69,9 @@ export function useAuth() {
                       const cloneLimit = profileWithPlan.plan.clone_limit
           const usageProgress = cloneLimit > 0 ? Math.min((currentClones / cloneLimit) * 100, 100) : 0
           
+          // CORRIGIDO: Usar getPlanInfo para garantir consistência
+          const planInfo = getPlanInfo(profileWithPlan.plan.slug)
+          
           // Converter usage para formato do hook
           const usage: PlanUsage = {
             currentClones: currentClones,
@@ -82,19 +86,13 @@ export function useAuth() {
               : usageProgress >= 80 ? 'warning' 
               : 'success',
             planInfo: {
-              name: profileWithPlan.plan.name,
-              slug: profileWithPlan.plan.slug,
-              cloneLimit: profileWithPlan.plan.clone_limit,
-              domainLimit: profileWithPlan.plan.domain_limit || (
-                profileWithPlan.plan.slug === 'free' ? 1 
-                : profileWithPlan.plan.slug === 'bronze' ? 3
-                : profileWithPlan.plan.slug === 'silver' ? 5
-                : profileWithPlan.plan.slug === 'gold' ? 10
-                : -1 // diamond = ilimitado
-              ),
-              price: profileWithPlan.plan.price,
-              extraClonePrice: profileWithPlan.plan.extra_clone_price,
-              features: profileWithPlan.plan.features || [],
+              name: planInfo.name,
+              slug: planInfo.slug,
+              cloneLimit: planInfo.cloneLimit,
+              domainLimit: planInfo.domainLimit, // Usar domainLimit do plan-utils.ts
+              price: planInfo.price,
+              extraClonePrice: planInfo.extraClonePrice,
+              features: planInfo.features,
             },
             planSlug: profileWithPlan.plan.slug,
             lastUpdated: new Date().toISOString(),

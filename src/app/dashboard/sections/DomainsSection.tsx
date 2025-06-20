@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { Icons } from '@/components/Icons'
 import { useAllowedDomains } from '@/hooks/useDataCache'
+import { useAuth } from '@/hooks/useAuth'
 import {
   User,
   DashboardUser,
-  getPlanLimits,
   validateDomain,
   LoadingSkeleton,
   ErrorMessage,
@@ -23,6 +23,8 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState('')
 
+  const { usage } = useAuth()
+
   const {
     data: domains,
     loading,
@@ -30,8 +32,8 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
     refresh: refreshDomains,
   } = useAllowedDomains(user?.id || '')
 
-  const planLimits = getPlanLimits(profile?.plan?.slug)
-  const canAddMore = planLimits.domains === -1 || (domains?.length || 0) < planLimits.domains
+  const domainLimit = usage?.planInfo?.domainLimit ?? 1
+  const canAddMore = domainLimit === -1 || (domains?.length || 0) < domainLimit
   const domainService = new DomainService()
 
   const handleAddDomain = async (e: React.FormEvent) => {
@@ -54,7 +56,7 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
 
     if (!canAddMore) {
       setError(
-                      `Limite de ${planLimits.domains} domínios atingido para o plano ${profile?.plan?.name ?? 'gratuito'}`
+        `Limite de ${domainLimit === -1 ? 'ilimitados' : domainLimit} domínios atingido para o plano ${profile?.plan?.name ?? 'gratuito'}`
       )
       return
     }
@@ -109,7 +111,7 @@ export default function DomainsSection({ user, profile }: DomainsSectionProps) {
         </div>
         <div className="glass-strong rounded-lg px-4 py-2">
           <span className="text-sm text-gray-400">
-            {domains?.length || 0} / {planLimits.domains === -1 ? '∞' : planLimits.domains}
+            {domains?.length || 0} / {domainLimit === -1 ? '∞' : domainLimit}
           </span>
         </div>
       </div>
